@@ -1,0 +1,26 @@
+{
+  "authSelections": "userPoolOnly",
+  "resourceName": "elearningmobile84e03419",
+  "serviceType": "imported",
+  "region": "ap-south-1",
+  "usernameAttributes": [
+    "email"
+  ],
+  "requiredAttributes": [
+    "given_name",
+    "family_name",
+    "email"
+  ],
+  "passwordPolicyMinLength": 8,
+  "passwordPolicyCharacters": [
+    "Requires Lowercase",
+    "Requires Uppercase",
+    "Requires Numbers",
+    "Requires Symbols"
+  ],
+  "mfaConfiguration": "OFF",
+  "autoVerifiedAttributes": [
+    "email"
+  ],
+  "mfaTypes": []
+}

@@ -1,0 +1,25 @@
+{
+  "dev": {
+    "awscloudformation": {
+      "AuthRoleName": "amplify-elearningmobile-dev-150735-authRole",
+      "UnauthRoleArn": "arn:aws:iam::436252464762:role/amplify-elearningmobile-dev-150735-unauthRole",
+      "AuthRoleArn": "arn:aws:iam::436252464762:role/amplify-elearningmobile-dev-150735-authRole",
+      "Region": "ap-south-1",
+      "DeploymentBucketName": "amplify-elearningmobile-dev-150735-deployment",
+      "UnauthRoleName": "amplify-elearningmobile-dev-150735-unauthRole",
+      "StackName": "amplify-elearningmobile-dev-150735",
+      "StackId": "arn:aws:cloudformation:ap-south-1:436252464762:stack/amplify-elearningmobile-dev-150735/f1ee36c0-c704-11ec-9a6f-02765c53f488",
+      "AmplifyAppId": "d29hipb25bxfk8"
+    },
+    "categories": {
+      "auth": {
+        "elearningmobile84e03419": {
+          "userPoolId": "ap-south-1_RURl3ClP1",
+          "userPoolName": "Students",
+          "webClientId": "18pjkmvrdljnh50vds3hfm6k7l",
+          "nativeClientId": "7ql1s2ljcd3p1d6q0ggf1rpjm3"
+        }
+      }
+    }
+  }
+}
