@@ -8,8 +8,8 @@ import { StatusBar } from "react-native";
 Amplify.configure({
   ...config,
   Analytics: {
-    disabled: true
-  }
+    disabled: true,
+  },
 });
 
 function App() {
@@ -25,57 +25,57 @@ const signUpConfig = {
   hideAllDefaults: true,
   signUpFields: [
     {
-      label: 'Email',
-      key: 'email',
+      label: "Email",
+      key: "email",
       required: true,
-      type: 'string',
-      placeholder: 'Enter your email',
-      displayOrder: 1
+      type: "string",
+      placeholder: "Enter your email",
+      displayOrder: 1,
     },
     {
-      label: 'Password',
-      key: 'password',
+      label: "Password",
+      key: "password",
       required: true,
-      type: 'password',
-      placeholder: 'Enter a password',
-      displayOrder: 2
+      type: "password",
+      placeholder: "Enter a password",
+      displayOrder: 2,
     },
     {
-      label: 'Given Name',
-      key: 'given_name',
+      label: "Given Name",
+      key: "given_name",
       required: true,
-      type: 'string',
-      placeholder: 'Enter your first name',
-      displayOrder: 3
+      type: "string",
+      placeholder: "Enter your first name",
+      displayOrder: 3,
     },
     {
-      label: 'Family Name',
-      key: 'family_name',
+      label: "Family Name",
+      key: "family_name",
       required: true,
-      type: 'string',
-      placeholder: 'Enter your last name',
-      displayOrder: 4
+      type: "string",
+      placeholder: "Enter your last name",
+      displayOrder: 4,
     },
     {
-      label: 'Phone Number',
-      key: 'phone_number',
+      label: "Phone Number",
+      key: "phone_number",
       required: true,
-      type: 'phone_number',
-      placeholder: 'Enter your phone number',
-      displayOrder: 5
+      type: "phone_number",
+      placeholder: "Enter your phone number",
+      displayOrder: 5,
     },
     {
-      label: 'Address',
-      key: 'address',
+      label: "Address",
+      key: "address",
       required: true,
-      type: 'string',
-      placeholder: 'Enter your address',
-      displayOrder: 6
-    }
-  ]
-}
+      type: "string",
+      placeholder: "Enter your address",
+      displayOrder: 6,
+    },
+  ],
+};
 
 export default withAuthenticator(App, {
   signUpConfig: signUpConfig,
-  usernameAttributes: 'email'
+  usernameAttributes: "email",
 });
