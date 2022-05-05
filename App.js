@@ -3,6 +3,7 @@ import Amplify from "aws-amplify";
 import config from "./src/aws-exports";
 import { withAuthenticator } from "aws-amplify-react-native";
 import MainContainer from "./src/navigation/MainContainer";
+import { StatusBar } from "react-native";
 
 Amplify.configure({
   ...config,
@@ -14,6 +15,7 @@ Amplify.configure({
 function App() {
   return (
     <SafeAreaProvider>
+      <StatusBar />
       <MainContainer />
     </SafeAreaProvider>
   );
@@ -74,7 +76,6 @@ const signUpConfig = {
 }
 
 export default withAuthenticator(App, {
-  includeGreetings: true,
   signUpConfig: signUpConfig,
   usernameAttributes: 'email'
 });
