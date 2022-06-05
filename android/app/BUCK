@@ -35,12 +35,12 @@ android_library(
 
 android_build_config(
     name = "build_config",
-    package = "com.sparkcoders.elearningMobile",
+    package = "com.elearningmobile",
 )
 
 android_resource(
     name = "res",
-    package = "com.sparkcoders.elearningMobile",
+    package = "com.elearningmobile",
     res = "src/main/res",
 )
 

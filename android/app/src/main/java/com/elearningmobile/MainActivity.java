@@ -1,4 +1,4 @@
-package com.sparkcoders.elearningMobile;
+package com.elearningmobile;
 
 import android.os.Build;
 import android.os.Bundle;

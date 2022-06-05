@@ -1,6 +1,6 @@
 import React from 'react';
 import { ScrollView, Text, View } from 'react-native';
-import Category from '../../Category/Category';
+import Category from '../Category/Category';
 import CourseDetails from '../CourseDetails/CourseDetails';
 import CourseProgress from '../CourseProgress/CourseProgress';
 import { customScrollViewStyles as styles } from './CustomScrollView.styles';

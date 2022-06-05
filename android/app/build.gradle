@@ -132,11 +132,11 @@ android {
     }
 
     defaultConfig {
-        applicationId 'com.sparkcoders.elearningMobile'
+        applicationId "com.elearningmobile"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1
-        versionName "1.0.0"
+        versionName "1.0"
     }
     splits {
         abi {
@@ -192,10 +192,6 @@ dependencies {
     def isWebpEnabled = (findProperty('expo.webp.enabled') ?: "") == "true";
     def isWebpAnimatedEnabled = (findProperty('expo.webp.animated') ?: "") == "true";
 
-    compile project(':react-native-video')
-    implementation "androidx.appcompat:appcompat:1.0.0"
-
-    implementation project(':rn-fetch-blob')
     // If your app supports Android versions before Ice Cream Sandwich (API level 14)
     // All fresco packages should use the same version
     if (isGifEnabled || isWebpEnabled) {
