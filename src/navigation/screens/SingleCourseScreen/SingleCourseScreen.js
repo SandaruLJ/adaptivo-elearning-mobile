@@ -65,7 +65,7 @@ export default function SingleCourseScreen({ navigation }) {
       }
     }
   };
-
+  // https://www.learningcontainer.com/wp-content/uploads/2020/05/sample-mp4-file.mp4
   const downloadFile = async () => {
     const path = ReactNativeBlobUtil.fs.dirs.SDCardDir;
 
@@ -79,10 +79,10 @@ export default function SingleCourseScreen({ navigation }) {
         // the url does not contains a file extension, by default the mime type will be text/plain
         mime: "video/mp4",
         description: "File downloaded by download manager.",
-        path: path + "/adaptivo/sample-mp4-file.mp4",
+        path: path + "/adaptivo/course/video-H264-640-1200k.m3u8",
       },
     })
-      .fetch("GET", "https://www.learningcontainer.com/wp-content/uploads/2020/05/sample-mp4-file.mp4")
+      .fetch("GET", "https://spark-courses.s3.ap-south-1.amazonaws.com/62272fbfc8ea4d8b75b76aa2/resources/output/cmaf/video-H264-640-1200k.m3u8")
       .progress({ count: 10 }, (received, total) => {
         console.log("progress", received / total);
       })

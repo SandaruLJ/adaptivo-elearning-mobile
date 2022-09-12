@@ -1,7 +1,7 @@
 import { getAll, getById, save } from "./http.service";
 
 // const url = `${process.env.REACT_APP_BE_URL}api/courses`;
-const url = `http://192.168.1.102:1035/api/courses`;
+const url = `http://192.168.1.101:1035/api/courses`;
 
 export const addCourse = async (data) => {
   const savedCourse = await save(url, data);
