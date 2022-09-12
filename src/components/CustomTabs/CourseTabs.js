@@ -1,10 +1,12 @@
 import { Button, Title, Paragraph, Text, Subheading, IconButton, Caption } from "react-native-paper";
 import { Tabs, TabScreen, useTabIndex, useTabNavigation } from "react-native-paper-tabs";
-import { View } from "react-native";
+import { TouchableHighlight, TouchableOpacity, View } from "react-native";
 import { colors } from "../../utils/colors";
 import { courseTabStyles } from "./CourseTabs.styles";
 import LinearGradient from "react-native-linear-gradient";
 import { ScrollView } from "react-native";
+import { useDispatch, useSelector } from "react-redux";
+import { courseActions } from "../../store/course-slice";
 
 export default function CourseTabs() {
   const style = courseTabStyles;
@@ -26,6 +28,7 @@ export default function CourseTabs() {
     >
       <TabScreen label="Lessons">
         <LessonsTab />
+        {/* <View style={{ backgroundColor: "black", flex: 1, height: 500 }} /> */}
       </TabScreen>
       <TabScreen label="Materials">
         <MaterialsTab />
@@ -42,50 +45,68 @@ export default function CourseTabs() {
 
 function LessonsTab() {
   const style = courseTabStyles;
+  const curriculum = useSelector((state) => state.course.curriculum);
+  const selectedUnit = useSelector((state) => state.course.selectedUnit);
+  const dispatch = useDispatch();
 
   const goTo = useTabNavigation();
   const index = useTabIndex();
-  return (
-    <ScrollView>
-      <View style={style.section}>
-        <View style={style.sectionHead}>
-          <Subheading style={style.sectionHeading}>Section 01: Force</Subheading>
-          <IconButton icon="download" style={style.sectionDownloadIcon} size={24} color={"#777"} />
-        </View>
 
-        <LinearGradient colors={["#FFD25ABF", "#FF9E4380"]} style={style.unit} useAngle={true} angle={45} angleCenter={{ x: 0.5, y: 0.5 }}>
-          <Text style={{ flex: 0.2, ...style.unitText }}>01</Text>
-          <View style={{ flex: 0.7 }}>
-            <Text style={style.unitText}>Introduction to Force</Text>
-            <Caption>Video - 02:00 min</Caption>
-          </View>
-          <IconButton icon="download-circle-outline" style={style.sectionDownloadIcon} size={30} color={"#6B6B6B"} />
-        </LinearGradient>
-        <View style={style.sectionBody}>
-          <View style={style.unit}>
-            <Text style={{ flex: 0.2, ...style.unitText }}>01</Text>
-            <View style={{ flex: 0.7 }}>
-              <Text style={style.unitText}>Introduction to Force</Text>
-              <Caption>Video - 02:00 min</Caption>
+  const handleUnitClick = (sectionNum, unitNum) => {
+    dispatch(courseActions.setSelectedUnit({ section: sectionNum, unit: unitNum }));
+  };
+  return (
+    <ScrollView style={{ flex: 1, flexDirection: "column", height: 800 }} nestedScrollEnabled={true}>
+      {curriculum.map((section, sectionNum) => {
+        return (
+          <View style={style.section} key={sectionNum}>
+            <View style={style.sectionHead}>
+              <Subheading style={style.sectionHeading}>
+                Section {sectionNum + 1}: {section.name}
+              </Subheading>
+              <IconButton icon="download" style={style.sectionDownloadIcon} size={24} color={"#777"} />
             </View>
-            <IconButton icon="download-circle-outline" style={style.sectionDownloadIcon} size={30} color={"#777"} />
+
+            {/* <LinearGradient colors={["#FFD25ABF", "#FF9E4380"]} style={style.unit} useAngle={true} angle={45} angleCenter={{ x: 0.5, y: 0.5 }}>
+              <Text style={{ flex: 0.2, ...style.unitText }}>01</Text>
+              <View style={{ flex: 0.7 }}>
+                <Text style={style.unitText}>Introduction to Force</Text>
+                <Caption>Video - 02:00 min</Caption>
+              </View>
+              <IconButton icon="download-circle-outline" style={style.sectionDownloadIcon} size={30} color={"#6B6B6B"} />
+            </LinearGradient> */}
+            {section.units.map((unit, unitNum) => {
+              if (sectionNum == selectedUnit.section && unitNum == selectedUnit.unit) {
+                return (
+                  <LinearGradient colors={["#FFD25ABF", "#FF9E4380"]} style={style.unit} useAngle={true} angle={45} angleCenter={{ x: 0.5, y: 0.5 }} key={unitNum}>
+                    <Text style={{ flex: 0.2, ...style.unitText }}>{unitNum + 1}</Text>
+                    <View style={{ flex: 0.7 }}>
+                      <Text style={style.unitText}>{unit.name}</Text>
+                      <Caption>{unit.type} - 02:00 min</Caption>
+                    </View>
+                    <IconButton icon="download-circle-outline" style={style.sectionDownloadIcon} size={30} color={"#6B6B6B"} />
+                  </LinearGradient>
+                );
+              } else {
+                return (
+                  <TouchableOpacity onPress={() => handleUnitClick(sectionNum, unitNum)} key={unitNum}>
+                    <View style={style.sectionBody}>
+                      <View style={style.unit}>
+                        <Text style={{ flex: 0.2, ...style.unitText }}>{unitNum + 1}</Text>
+                        <View style={{ flex: 0.7 }}>
+                          <Text style={style.unitText}>{unit.name}</Text>
+                          <Caption>{unit.type} - 02:00 min</Caption>
+                        </View>
+                        <IconButton icon="download-circle-outline" style={style.sectionDownloadIcon} size={30} color={"#777"} />
+                      </View>
+                    </View>
+                  </TouchableOpacity>
+                );
+              }
+            })}
           </View>
-        </View>
-        <View style={style.sectionBody}>
-          <View style={style.unit}>
-            <Text style={{ flex: 0.2, ...style.unitText }}>01</Text>
-            <Text style={{ flex: 0.7, ...style.unitText }}>Introduction to Force</Text>
-            <IconButton icon="download-circle-outline" style={style.sectionDownloadIcon} size={30} color={"#777"} />
-          </View>
-        </View>
-        <View style={style.sectionBody}>
-          <View style={style.unit}>
-            <Text style={{ flex: 0.2, ...style.unitText }}>01</Text>
-            <Text style={{ flex: 0.7, ...style.unitText }}>Introduction to Force</Text>
-            <IconButton icon="download-circle-outline" style={style.sectionDownloadIcon} size={30} color={"#777"} />
-          </View>
-        </View>
-      </View>
+        );
+      })}
     </ScrollView>
   );
 }

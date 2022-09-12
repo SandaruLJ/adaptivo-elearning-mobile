@@ -4,6 +4,11 @@ import config from "./src/aws-exports";
 import { withAuthenticator } from "aws-amplify-react-native";
 import MainContainer from "./src/navigation/MainContainer";
 import { StatusBar } from "react-native";
+import { Provider } from "react-redux";
+import store from "./src/store";
+if (__DEV__) {
+  import("./ReactotronConfig").then(() => console.log("Reactotron Configured"));
+}
 
 Amplify.configure({
   ...config,
@@ -14,10 +19,12 @@ Amplify.configure({
 
 function App() {
   return (
-    <SafeAreaProvider>
-      <StatusBar />
-      <MainContainer />
-    </SafeAreaProvider>
+    <Provider store={store}>
+      <SafeAreaProvider>
+        <StatusBar />
+        <MainContainer />
+      </SafeAreaProvider>
+    </Provider>
   );
 }
 
