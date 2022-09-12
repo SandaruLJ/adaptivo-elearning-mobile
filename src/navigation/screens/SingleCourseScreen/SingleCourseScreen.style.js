@@ -16,12 +16,16 @@ export const singleCourseScreenStyles = StyleSheet.create({
   courseDetails: {
     backgroundColor: colors.white,
     width: "100%",
-    height: 100,
+    // height: 100,
     borderTopLeftRadius: 10,
     borderTopRightRadius: 10,
     marginTop: -5,
     padding: 15,
     marginBottom: -10,
     flexDirection: "row",
+  },
+  courseDetailIcon: {
+    padding: 0,
+    margin: 0,
   },
 });

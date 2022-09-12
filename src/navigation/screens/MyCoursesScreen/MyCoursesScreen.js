@@ -39,7 +39,7 @@ export default function MyCoursesScreen({ navigation }) {
           <IconButton icon="filter-variant" style={styles.topBarIcon} size={30} onPress={() => console.log("Pressed")} />
         </View>
       </View>
-      <View style={{ transform: [{ translateX: dimensions.screen.width / -2 }], ...styles.ongoingContainer }}>
+      <View style={{ transform: [{ translateX: dimensions.screen.width / -1.4 }], ...styles.ongoingContainer }}>
         <Button
           mode="contained"
           style={selectedTab == "ongoing" ? styles.activeButton : styles.inActiveButton}
