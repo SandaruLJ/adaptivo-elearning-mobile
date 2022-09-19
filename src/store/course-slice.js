@@ -14,18 +14,41 @@ const courseSlice = createSlice({
       let type = unit.type;
       let body;
 
-      if (unit.isConceptLink) {
-        type = "video";
-        body = unit.loId.video.url;
-      } else {
-        if (type == "video") {
-          body = unit.video.url;
-        } else if (type == "audio") {
-          body = unit.audio.url;
-        } else if (type == "note") {
-          body = unit.note;
-        }
+      if (type == "video") {
+        body = unit.video.url;
+      } else if (type == "audio") {
+        body = unit.audio.url;
+      } else if (type == "note") {
+        body = unit.note;
+      } else if (type == "file") {
+        body = unit.file.url;
+      } else if (type == "visualNote") {
+        body = unit.visualNote.url;
+      } else if (type == "mindmap") {
+        body = unit.mindmap.url;
+      } else if (type == "textRichFile") {
+        body = unit.textRichFile.url;
+      } else if (type == "realExampleVideo") {
+        body = unit.realExampleVideo.url;
+      } else if (type == "realExampleDoc") {
+        body = unit.realExampleDoc.url;
+      } else if (type == "additionalVideo") {
+        body = unit.additionalVideo.url;
+      } else if (type == "additionalMaterials") {
+        body = unit.additionalMaterials.url;
       }
+      // if (unit.isConceptLink) {
+      //   type = "video";
+      //   body = unit.loId.video.url;
+      // } else {
+      //   if (type == "video") {
+      //     body = unit.video.url;
+      //   } else if (type == "audio") {
+      //     body = unit.audio.url;
+      //   } else if (type == "note") {
+      //     body = unit.note;
+      //   }
+      // }
       state.contentType = type;
       state.contentBody = body;
       state.selectedUnitName = unit.name;
@@ -77,17 +100,28 @@ const courseSlice = createSlice({
       let type = unit.type;
       let body;
 
-      if (unit.isConceptLink) {
-        type = "video";
-        body = unit.loId.video.url;
-      } else {
-        if (type == "video") {
-          body = unit.video.url;
-        } else if (type == "audio") {
-          body = unit.audio.url;
-        } else if (type == "note") {
-          body = unit.note;
-        }
+      if (type == "video") {
+        body = unit.video.url;
+      } else if (type == "audio") {
+        body = unit.audio.url;
+      } else if (type == "note") {
+        body = unit.note;
+      } else if (type == "file") {
+        body = unit.file.url;
+      } else if (type == "visualNote") {
+        body = unit.visualNote.url;
+      } else if (type == "mindmap") {
+        body = unit.mindmap.url;
+      } else if (type == "textRichFile") {
+        body = unit.textRichFile.url;
+      } else if (type == "realExampleVideo") {
+        body = unit.realExampleVideo.url;
+      } else if (type == "realExampleDoc") {
+        body = unit.realExampleDoc.url;
+      } else if (type == "additionalVideo") {
+        body = unit.additionalVideo.url;
+      } else if (type == "additionalMaterials") {
+        body = unit.additionalMaterials.url;
       }
       state.contentType = type;
       state.contentBody = body;

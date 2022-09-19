@@ -15,6 +15,7 @@ import ReactNativeBlobUtil from "react-native-blob-util";
 import { getCourseById } from "../../../services/course.service";
 import { useDispatch, useSelector } from "react-redux";
 import { courseActions } from "../../../store/course-slice";
+import { getUserCourseById } from "../../../services/usercourse.service";
 
 export default function SingleCourseScreen({ navigation }) {
   const style = singleCourseScreenStyles;
@@ -24,13 +25,25 @@ export default function SingleCourseScreen({ navigation }) {
   const body = useSelector((state) => state.course.contentBody);
   const selectedUnitName = useSelector((state) => state.course.selectedUnitName);
   const courseName = useSelector((state) => state.course.courseName);
+  const [isAllDownloaded, setIsAllDownloaded] = useState(false);
+  const filesToDownload = [
+    "manifest.m3u8",
+    "manifest.mpd",
+    "audio-en.m3u8",
+    "audio-en-audio-en-mp4a.mp4",
+    "video-H264-640-1200k.m3u8",
+    "video-H264-640-1200k-video-avc1.mp4",
+    "video-H264-640-1200k_iframes.m3u8",
+  ];
 
   const getData = async () => {
     //Fetches the data from the db
-    const response = await getCourseById("628d437fd2ead54fca9b1b07");
+    const response = await getUserCourseById("632321a83d306c8028f4e711");
+
     setData(response);
     dispatch(courseActions.setCourseName(response.title));
-    dispatch(courseActions.setCurriculum(response.curriculum));
+    dispatch(courseActions.setCurriculum([...response.learningPath]));
+
     dispatch(courseActions.setSelectedUnit({ section: 0, unit: 0 }));
     dispatch(courseActions.setNextUnit());
   };
@@ -70,38 +83,43 @@ export default function SingleCourseScreen({ navigation }) {
     const path = ReactNativeBlobUtil.fs.dirs.SDCardDir;
 
     console.log("downloadFile");
-    ReactNativeBlobUtil.config({
-      addAndroidDownloads: {
-        useDownloadManager: true, // <-- this is the only thing required
-        // Optional, override notification setting (default to true)
-        notification: false,
-        // Optional, but recommended since android DownloadManager will fail when
-        // the url does not contains a file extension, by default the mime type will be text/plain
-        mime: "video/mp4",
-        description: "File downloaded by download manager.",
-        path: path + "/adaptivo/course/video-H264-640-1200k.m3u8",
-      },
-    })
-      .fetch("GET", "https://spark-courses.s3.ap-south-1.amazonaws.com/62272fbfc8ea4d8b75b76aa2/resources/output/cmaf/video-H264-640-1200k.m3u8")
-      .progress({ count: 10 }, (received, total) => {
-        console.log("progress", received / total);
+    filesToDownload.map((fileName) => {
+      ReactNativeBlobUtil.config({
+        addAndroidDownloads: {
+          useDownloadManager: true, // <-- this is the only thing required
+          // Optional, override notification setting (default to true)
+          notification: false,
+          // Optional, but recommended since android DownloadManager will fail when
+          // the url does not contains a file extension, by default the mime type will be text/plain
+          mime: "video/mp4",
+          description: "File downloaded by download manager.",
+          path: path + `/adaptivo/course/${fileName}`,
+        },
       })
-      .then((resp) => {
-        // the path of downloaded file
-        console.log("Downloaded");
-        console.log(resp.path());
-        resp.path();
-      })
-      .catch((err) => {
-        console.log(err);
-      });
+        .fetch("GET", `https://spark-courses.s3.ap-south-1.amazonaws.com/62272fbfc8ea4d8b75b76aa2/resources/output/cmaf/${fileName}`)
+        .progress({ count: 10 }, (received, total) => {
+          console.log(received);
+          console.log(total);
+          console.log("progress", received / total);
+        })
+        .then((resp) => {
+          // the path of downloaded file
+          console.log("Downloaded");
+          console.log(resp.path());
+          resp.path();
+          setIsAllDownloaded(true);
+        })
+        .catch((err) => {
+          console.log(err);
+        });
+    });
   };
 
   return (
     <SafeAreaView style={style.container}>
       <ScrollView style={{ flex: 1, flexDirection: "column" }} nestedScrollEnabled={true}>
         <View style={{ height: 700 }}>
-          {type == "video" && <VideoPlayer src={body} />}
+          {(type == "video" || type == "realExampleVideo" || type == "additionalVideo") && <VideoPlayer src={body} isAllDownloaded={isAllDownloaded} />}
 
           {data && (
             <View style={{ flex: 1, flexDirection: "column", justifyContent: "flex-start" }}>
@@ -115,7 +133,7 @@ export default function SingleCourseScreen({ navigation }) {
                   <IconButton icon="download" size={32} onPress={() => checkPermission()} />
                 </View>
               </View>
-              <CourseTabs curriculum={data.curriculum} />
+              <CourseTabs curriculum={data.learningPath} />
             </View>
           )}
         </View>

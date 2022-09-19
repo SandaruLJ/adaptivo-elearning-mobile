@@ -82,7 +82,9 @@ function LessonsTab() {
                     <Text style={{ flex: 0.2, ...style.unitText }}>{unitNum + 1}</Text>
                     <View style={{ flex: 0.7 }}>
                       <Text style={style.unitText}>{unit.name}</Text>
-                      <Caption>{unit.type} - 02:00 min</Caption>
+                      <Caption>
+                        {unit.type} - {unit.type == "video" ? unit.video.duration : "02:00"} min
+                      </Caption>
                     </View>
                     <IconButton icon="download-circle-outline" style={style.sectionDownloadIcon} size={30} color={"#6B6B6B"} />
                   </LinearGradient>
