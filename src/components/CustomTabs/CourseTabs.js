@@ -7,6 +7,7 @@ import LinearGradient from "react-native-linear-gradient";
 import { ScrollView } from "react-native";
 import { useDispatch, useSelector } from "react-redux";
 import { courseActions } from "../../store/course-slice";
+import { setDownloadQuality } from "../../utils/smartDownloadAgent";
 
 export default function CourseTabs() {
   const style = courseTabStyles;
@@ -55,6 +56,11 @@ function LessonsTab() {
   const handleUnitClick = (sectionNum, unitNum) => {
     dispatch(courseActions.setSelectedUnit({ section: sectionNum, unit: unitNum }));
   };
+  const handleUnitDownload = async () => {
+    console.log("clicked");
+    const downloadQuality = await setDownloadQuality(1000000);
+    console.log(downloadQuality);
+  };
   return (
     <ScrollView style={{ flex: 1, flexDirection: "column", height: 800 }} nestedScrollEnabled={true}>
       {curriculum.map((section, sectionNum) => {
@@ -99,7 +105,7 @@ function LessonsTab() {
                           <Text style={style.unitText}>{unit.name}</Text>
                           <Caption>{unit.type} - 02:00 min</Caption>
                         </View>
-                        <IconButton icon="download-circle-outline" style={style.sectionDownloadIcon} size={30} color={"#777"} />
+                        <IconButton icon="download-circle-outline" style={style.sectionDownloadIcon} size={30} color={"#777"} onPress={() => handleUnitDownload()} />
                       </View>
                     </View>
                   </TouchableOpacity>

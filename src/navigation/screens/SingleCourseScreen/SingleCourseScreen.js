@@ -16,6 +16,8 @@ import { getCourseById } from "../../../services/course.service";
 import { useDispatch, useSelector } from "react-redux";
 import { courseActions } from "../../../store/course-slice";
 import { getUserCourseById } from "../../../services/usercourse.service";
+import { checkFreeStorage, setDownloadQuality } from "../../../utils/smartDownloadAgent";
+
 
 export default function SingleCourseScreen({ navigation }) {
   const style = singleCourseScreenStyles;
@@ -83,36 +85,37 @@ export default function SingleCourseScreen({ navigation }) {
     const path = ReactNativeBlobUtil.fs.dirs.SDCardDir;
 
     console.log("downloadFile");
-    filesToDownload.map((fileName) => {
-      ReactNativeBlobUtil.config({
-        addAndroidDownloads: {
-          useDownloadManager: true, // <-- this is the only thing required
-          // Optional, override notification setting (default to true)
-          notification: false,
-          // Optional, but recommended since android DownloadManager will fail when
-          // the url does not contains a file extension, by default the mime type will be text/plain
-          mime: "video/mp4",
-          description: "File downloaded by download manager.",
-          path: path + `/adaptivo/course/${fileName}`,
-        },
-      })
-        .fetch("GET", `https://spark-courses.s3.ap-south-1.amazonaws.com/62272fbfc8ea4d8b75b76aa2/resources/output/cmaf/${fileName}`)
-        .progress({ count: 10 }, (received, total) => {
-          console.log(received);
-          console.log(total);
-          console.log("progress", received / total);
-        })
-        .then((resp) => {
-          // the path of downloaded file
-          console.log("Downloaded");
-          console.log(resp.path());
-          resp.path();
-          setIsAllDownloaded(true);
-        })
-        .catch((err) => {
-          console.log(err);
-        });
-    });
+    setDownloadQuality(1000000);
+    // filesToDownload.map((fileName) => {
+    //   ReactNativeBlobUtil.config({
+    //     addAndroidDownloads: {
+    //       useDownloadManager: true, // <-- this is the only thing required
+    //       // Optional, override notification setting (default to true)
+    //       notification: false,
+    //       // Optional, but recommended since android DownloadManager will fail when
+    //       // the url does not contains a file extension, by default the mime type will be text/plain
+    //       mime: "video/mp4",
+    //       description: "File downloaded by download manager.",
+    //       path: path + `/adaptivo/course/${fileName}`,
+    //     },
+    //   })
+    //     .fetch("GET", `https://spark-courses.s3.ap-south-1.amazonaws.com/62272fbfc8ea4d8b75b76aa2/resources/output/cmaf/${fileName}`)
+    //     .progress({ count: 10 }, (received, total) => {
+    //       console.log(received);
+    //       console.log(total);
+    //       console.log("progress", received / total);
+    //     })
+    //     .then((resp) => {
+    //       // the path of downloaded file
+    //       console.log("Downloaded");
+    //       console.log(resp.path());
+    //       resp.path();
+    //       setIsAllDownloaded(true);
+    //     })
+    //     .catch((err) => {
+    //       console.log(err);
+    //     });
+    // });
   };
 
   return (
