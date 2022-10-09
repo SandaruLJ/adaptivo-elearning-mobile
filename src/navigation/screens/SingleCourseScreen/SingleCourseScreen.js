@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Text, Platform, PermissionsAndroid, ScrollView } from "react-native";
+import { Text, Platform, PermissionsAndroid, ScrollView, ActivityIndicator } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Video from "react-native-video";
 import { View } from "react-native";
@@ -17,16 +17,18 @@ import { useDispatch, useSelector } from "react-redux";
 import { courseActions } from "../../../store/course-slice";
 import { getUserCourseById } from "../../../services/usercourse.service";
 import { checkFreeStorage, setDownloadQuality } from "../../../utils/smartDownloadAgent";
-
+import { colors } from "../../../utils/colors";
 
 export default function SingleCourseScreen({ navigation }) {
   const style = singleCourseScreenStyles;
   const [data, setData] = useState();
+  const [isLoading, setIsLoading] = useState(false);
   const dispatch = useDispatch();
   const type = useSelector((state) => state.course.contentType);
   const body = useSelector((state) => state.course.contentBody);
   const selectedUnitName = useSelector((state) => state.course.selectedUnitName);
   const courseName = useSelector((state) => state.course.courseName);
+
   const [isAllDownloaded, setIsAllDownloaded] = useState(false);
   const filesToDownload = [
     "manifest.m3u8",
@@ -41,20 +43,18 @@ export default function SingleCourseScreen({ navigation }) {
   const getData = async () => {
     //Fetches the data from the db
     const response = await getUserCourseById("632321a83d306c8028f4e711");
-
+    setIsLoading(true);
     setData(response);
     dispatch(courseActions.setCourseName(response.title));
     dispatch(courseActions.setCurriculum([...response.learningPath]));
 
     dispatch(courseActions.setSelectedUnit({ section: 0, unit: 0 }));
     dispatch(courseActions.setNextUnit());
+    setIsLoading(false);
   };
   useEffect(() => {
     getData();
   }, []);
-  useEffect(() => {
-    console.log("Type = " + type);
-  }, [type]);
 
   const checkPermission = async () => {
     console.log("Check Permission");
@@ -84,41 +84,44 @@ export default function SingleCourseScreen({ navigation }) {
   const downloadFile = async () => {
     const path = ReactNativeBlobUtil.fs.dirs.SDCardDir;
 
-    console.log("downloadFile");
     setDownloadQuality(1000000);
     // filesToDownload.map((fileName) => {
-    //   ReactNativeBlobUtil.config({
-    //     addAndroidDownloads: {
-    //       useDownloadManager: true, // <-- this is the only thing required
-    //       // Optional, override notification setting (default to true)
-    //       notification: false,
-    //       // Optional, but recommended since android DownloadManager will fail when
-    //       // the url does not contains a file extension, by default the mime type will be text/plain
-    //       mime: "video/mp4",
-    //       description: "File downloaded by download manager.",
-    //       path: path + `/adaptivo/course/${fileName}`,
-    //     },
-    //   })
-    //     .fetch("GET", `https://spark-courses.s3.ap-south-1.amazonaws.com/62272fbfc8ea4d8b75b76aa2/resources/output/cmaf/${fileName}`)
-    //     .progress({ count: 10 }, (received, total) => {
-    //       console.log(received);
-    //       console.log(total);
-    //       console.log("progress", received / total);
-    //     })
-    //     .then((resp) => {
-    //       // the path of downloaded file
-    //       console.log("Downloaded");
-    //       console.log(resp.path());
-    //       resp.path();
-    //       setIsAllDownloaded(true);
-    //     })
-    //     .catch((err) => {
-    //       console.log(err);
-    //     });
+    ReactNativeBlobUtil.config({
+      addAndroidDownloads: {
+        useDownloadManager: true, // <-- this is the only thing required
+        // Optional, override notification setting (default to true)
+        notification: false,
+        // Optional, but recommended since android DownloadManager will fail when
+        // the url does not contains a file extension, by default the mime type will be text/plain
+        mime: "video/mp4",
+        description: "File downloaded by download manager.",
+        path: path + `/adaptivo/course/${fileName}`,
+      },
+    })
+      .fetch("GET", `https://spark-courses.s3.ap-south-1.amazonaws.com/62272fbfc8ea4d8b75b76aa2/resources/output/cmaf/${fileName}`)
+      .progress({ count: 10 }, (received, total) => {
+        console.log(received);
+        console.log(total);
+        console.log("progress", received / total);
+      })
+      .then((resp) => {
+        // the path of downloaded file
+        console.log("Downloaded");
+        console.log(resp.path());
+        resp.path();
+        setIsAllDownloaded(true);
+      })
+      .catch((err) => {
+        console.log(err);
+      });
     // });
   };
 
-  return (
+  return isLoading ? (
+    <View style={style.loadingContainer}>
+      <ActivityIndicator size="large" color={colors.orange} />
+    </View>
+  ) : (
     <SafeAreaView style={style.container}>
       <ScrollView style={{ flex: 1, flexDirection: "column" }} nestedScrollEnabled={true}>
         <View style={{ height: 700 }}>

@@ -74,4 +74,9 @@ export const ShareScreenStyles = StyleSheet.create({
     fontSize: 20,
     padding: 10,
   },
+  loadingContainer: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+  },
 });
