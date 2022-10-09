@@ -1,7 +1,7 @@
 import { getAll, getById, save, update } from "./http.service";
 
 // const url = `${process.env.REACT_APP_BE_URL}api/usercourse`;
-const url = `http://192.168.1.102:1035/api/usercourse`;
+const url = `https://api.adaptivo.me/api/usercourse`;
 
 export const enrollCourse = async (data) => {
   const response = await save(url, data);
