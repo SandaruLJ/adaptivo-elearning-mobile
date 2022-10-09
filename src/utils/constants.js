@@ -4,6 +4,7 @@ export const constants = {
   myCourses: "My Courses",
   search: "Search",
   statistics: "Statistics",
+  share: "Share",
   account: "Account",
   singleCourse: "Single Course",
 };
