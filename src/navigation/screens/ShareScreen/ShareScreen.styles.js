@@ -61,4 +61,17 @@ export const ShareScreenStyles = StyleSheet.create({
     height: 50,
     width: 300,
   },
+  passwordError: {
+    color: "#ff0000",
+  },
+  contentHubDetails: {
+    padding: 10,
+    paddingBottom: 50,
+  },
+  contentHubCredentials: {
+    textAlign: "center",
+    fontWeight: "700",
+    fontSize: 20,
+    padding: 10,
+  },
 });

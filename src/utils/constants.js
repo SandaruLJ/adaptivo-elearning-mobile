@@ -7,4 +7,9 @@ export const constants = {
   share: "Share",
   account: "Account",
   singleCourse: "Single Course",
+  device: "Sandaru's Phone",
+  password: "sandaru1234",
+  ssid: "Piumi's Phone",
+  ssidPass: "Piumi1234",
+  contentHubTitle: "Piumi's Content Hub",
 };

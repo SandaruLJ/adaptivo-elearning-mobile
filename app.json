@@ -13,9 +13,8 @@
     "updates": {
       "fallbackToCacheTimeout": 0
     },
-    "assetBundlePatterns": [
-      "**/*"
-    ],
+    "assetBundlePatterns": ["**/*"],
+    "plugins": ["react-native-wifi-reborn"],
     "ios": {
       "supportsTablet": true
     },
