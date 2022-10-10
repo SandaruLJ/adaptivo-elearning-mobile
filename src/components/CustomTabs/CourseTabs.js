@@ -7,6 +7,9 @@ import LinearGradient from "react-native-linear-gradient";
 import { ScrollView } from "react-native";
 import { useDispatch, useSelector } from "react-redux";
 import { courseActions } from "../../store/course-slice";
+import { setDownloadQuality } from "../../utils/smartDownloadAgent";
+import { useState } from "react";
+import { AnimatedCircularProgress } from "react-native-circular-progress";
 
 export default function CourseTabs() {
   const style = courseTabStyles;
@@ -49,11 +52,17 @@ function LessonsTab() {
   const selectedUnit = useSelector((state) => state.course.selectedUnit);
   const dispatch = useDispatch();
 
+  const [isDownloading, setIsDownloading] = useState({ section: -1, unit: -1 });
+
   const goTo = useTabNavigation();
   const index = useTabIndex();
 
   const handleUnitClick = (sectionNum, unitNum) => {
     dispatch(courseActions.setSelectedUnit({ section: sectionNum, unit: unitNum }));
+  };
+  const handleUnitDownload = async (section, unit) => {
+    const downloadQuality = await setDownloadQuality(1000000);
+    setIsDownloading({ section, unit });
   };
   return (
     <ScrollView style={{ flex: 1, flexDirection: "column", height: 800 }} nestedScrollEnabled={true}>
@@ -82,9 +91,17 @@ function LessonsTab() {
                     <Text style={{ flex: 0.2, ...style.unitText }}>{unitNum + 1}</Text>
                     <View style={{ flex: 0.7 }}>
                       <Text style={style.unitText}>{unit.name}</Text>
-                      <Caption>{unit.type} - 02:00 min</Caption>
+                      <Caption>
+                        {unit.type} - {unit.type == "video" ? unit.video.duration : "02:00"} min
+                      </Caption>
                     </View>
-                    <IconButton icon="download-circle-outline" style={style.sectionDownloadIcon} size={30} color={"#6B6B6B"} />
+
+                    {unit.type != "preTest" && unit.type != "quiz" && isDownloading.unit != unitNum && (
+                      <IconButton icon="download-circle-outline" style={style.sectionDownloadIcon} size={30} color={"#6B6B6B"} onPress={() => handleUnitDownload(sectionNum, unitNum)} />
+                    )}
+                    {isDownloading.section == sectionNum && isDownloading.unit == unitNum && (
+                      <AnimatedCircularProgress size={30} style={style.downloadProgress} width={5} fill={100} tintColor="#fff" backgroundColor="#999" duration={60000} />
+                    )}
                   </LinearGradient>
                 );
               } else {
@@ -97,7 +114,13 @@ function LessonsTab() {
                           <Text style={style.unitText}>{unit.name}</Text>
                           <Caption>{unit.type} - 02:00 min</Caption>
                         </View>
-                        <IconButton icon="download-circle-outline" style={style.sectionDownloadIcon} size={30} color={"#777"} />
+
+                        {unit.type != "preTest" && unit.type != "quiz" && isDownloading.unit != unitNum && (
+                          <IconButton icon="download-circle-outline" style={style.sectionDownloadIcon} size={30} color={"#777"} onPress={() => handleUnitDownload(sectionNum, unitNum)} />
+                        )}
+                        {isDownloading.section == sectionNum && isDownloading.unit == unitNum && (
+                          <AnimatedCircularProgress size={30} style={style.downloadProgress} width={5} fill={100} tintColor="#ff9c3f" backgroundColor="#999" duration={60000} />
+                        )}
                       </View>
                     </View>
                   </TouchableOpacity>
@@ -110,6 +133,7 @@ function LessonsTab() {
     </ScrollView>
   );
 }
+function downloadResource() {}
 function MaterialsTab() {
   const style = courseTabStyles;
 

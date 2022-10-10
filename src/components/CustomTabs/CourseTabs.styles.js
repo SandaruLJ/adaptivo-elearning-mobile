@@ -25,6 +25,10 @@ export const courseTabStyles = StyleSheet.create({
   sectionDownloadIcon: {
     flex: 0.1,
   },
+  downloadProgress: {
+    flex: 0.2,
+    marginLeft: 25,
+  },
   sectionBody: {
     marginTop: 5,
     flex: 1,

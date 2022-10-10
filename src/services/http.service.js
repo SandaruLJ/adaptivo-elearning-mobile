@@ -18,9 +18,6 @@ const getAll = async (url) => {
     .catch((err) => console.log(err));
 };
 const getById = async (url, id) => {
-  console.log("In get by Id");
-  console.log(url);
-  console.log(id);
   return await fetch(url + `/${id}`)
     .then((res) => res.json())
     .then((data) => data)

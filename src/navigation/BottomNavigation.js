@@ -13,6 +13,7 @@ import MyCoursesScreen from "./screens/MyCoursesScreen/MyCoursesScreen";
 import StatisticScreen from "./screens/StatiscticScreen/StatisticScreen";
 import AccountsScreen from "./screens/AccountScreen/AccountScreen";
 import SingleCourseScreen from "./screens/SingleCourseScreen/SingleCourseScreen";
+import ShareScreen from "./screens/ShareScreen/ShareScreen";
 
 const Tab = createBottomTabNavigator();
 
@@ -32,6 +33,8 @@ function BottomNavigation() {
           } else if (rn === constants.myCourses) {
             iconName = focused ? "play-circle" : "play-circle-outline";
           } else if (rn === constants.statistics) {
+            iconName = focused ? "stats-chart" : "stats-chart-outline";
+          } else if (rn === constants.share) {
             iconName = focused ? "stats-chart" : "stats-chart-outline";
           } else if (rn === constants.account) {
             iconName = focused ? "person" : "person-outline";
@@ -73,7 +76,14 @@ function BottomNavigation() {
         }}
         component={MyCoursesScreen}
       />
-      <Tab.Screen name={constants.statistics} component={StatisticScreen} />
+      <Tab.Screen
+        name={constants.share}
+        options={{
+          headerShown: false,
+        }}
+        component={ShareScreen}
+      />
+      {/* <Tab.Screen name={constants.statistics} component={StatisticScreen} /> */}
       <Tab.Screen name={constants.account} component={AccountsScreen} />
       <Tab.Screen
         name={constants.singleCourse}

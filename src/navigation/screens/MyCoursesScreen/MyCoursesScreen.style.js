@@ -12,7 +12,7 @@ export const myCoursesScreenStyles = StyleSheet.create({
   },
   topBarHeading: {
     position: "absolute",
-    left: "50%",
+    left: "40%",
     top: -20,
     fontWeight: "700",
   },
