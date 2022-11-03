@@ -1,5 +1,5 @@
 import * as React from "react";
-import { Text, View, Image } from "react-native";
+import { Text, View, Image, ScrollView } from "react-native";
 import { AnimatedCircularProgress } from "react-native-circular-progress";
 import { Button, Caption, Headline, TextInput } from "react-native-paper";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -84,9 +84,9 @@ export default function ShareScreen({ navigation }) {
           <Headline style={styles.shareHeading}>Adaptivo Sharing</Headline>
           <Caption>Share courses among your peers with ease</Caption>
           <Image source={sharingImage} style={styles.sharingImage} />
-          <Button mode="contained" dark={true} uppercase={false} color={colors.orange} style={styles.shareButton} onPress={() => setStep(6)}>
+          {/* <Button mode="contained" dark={true} uppercase={false} color={colors.orange} style={styles.shareButton} onPress={() => setStep(6)}>
             Set Up as a Content Hub
-          </Button>
+          </Button> */}
           <Button mode="contained" dark={true} uppercase={false} color={colors.orange} style={styles.shareButton} onPress={() => setStep(2)}>
             Connect to a Content Hub
           </Button>
@@ -102,7 +102,7 @@ export default function ShareScreen({ navigation }) {
       ) : step == 3 ? (
         <View style={styles.devicesContainer}>
           <Headline style={styles.searchingHeading}>Select a Device</Headline>
-          <View>
+          <ScrollView>
             {deviceList.map((device, i) => {
               return (
                 <Text
@@ -130,7 +130,7 @@ export default function ShareScreen({ navigation }) {
             >
               {constants.device}
             </Text>
-          </View>
+          </ScrollView>
 
           <Button mode="contained" dark={true} uppercase={false} color={colors.orange} style={styles.shareButton} onPress={() => setStep(1)}>
             Back to Adaptivo Sharing
