@@ -18,8 +18,9 @@ import { courseActions } from "../../../store/course-slice";
 import { getUserCourseById } from "../../../services/usercourse.service";
 import { checkFreeStorage, setDownloadQuality } from "../../../utils/smartDownloadAgent";
 import { colors } from "../../../utils/colors";
+import { TabRouter } from "react-navigation";
 
-export default function SingleCourseScreen({ navigation }) {
+export default function SingleCourseScreen({ route, navigation }) {
   const style = singleCourseScreenStyles;
   const [data, setData] = useState();
   const [isLoading, setIsLoading] = useState(false);
@@ -42,19 +43,23 @@ export default function SingleCourseScreen({ navigation }) {
 
   const getData = async () => {
     //Fetches the data from the db
-    const response = await getUserCourseById("632321a83d306c8028f4e711");
+    // "632321a83d306c8028f4e711"
+    // const response = await getUserCourseById(route.params.id);
     setIsLoading(true);
+    const response = await getUserCourseById("632321a83d306c8028f4e711");
     setData(response);
     dispatch(courseActions.setCourseName(response.title));
     dispatch(courseActions.setCurriculum([...response.learningPath]));
 
     dispatch(courseActions.setSelectedUnit({ section: 0, unit: 0 }));
     dispatch(courseActions.setNextUnit());
+    console.log("done");
     setIsLoading(false);
   };
   useEffect(() => {
+    setData();
     getData();
-  }, []);
+  }, [route.params.id]);
 
   const checkPermission = async () => {
     console.log("Check Permission");
@@ -126,7 +131,7 @@ export default function SingleCourseScreen({ navigation }) {
     <SafeAreaView style={style.container}>
       <ScrollView style={{ flex: 1, flexDirection: "column" }} nestedScrollEnabled={true}>
         <View style={{ height: 700 }}>
-          {(type == "video" || type == "realExampleVideo" || type == "additionalVideo") && <VideoPlayer src={body} isAllDownloaded={isAllDownloaded} />}
+          {data && (type == "video" || type == "realExampleVideo" || type == "additionalVideo") && <VideoPlayer src={body} isAllDownloaded={isAllDownloaded} />}
 
           {data && (
             <View style={{ flex: 1, flexDirection: "column", justifyContent: "flex-start" }}>

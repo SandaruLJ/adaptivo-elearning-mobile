@@ -57,6 +57,7 @@ export const myCoursesScreenStyles = StyleSheet.create({
     height: 200,
     width: "100%",
     backgroundColor: "white",
+    marginBottom: 15,
 
     borderRadius: 20,
     // padding: 20,
@@ -98,5 +99,14 @@ export const myCoursesScreenStyles = StyleSheet.create({
     right: 10,
     top: 10,
     position: "absolute",
+  },
+  loadingContainer: {
+    marginTop: 25,
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  myCoursesContainer: {
+    marginBottom: 100,
   },
 });

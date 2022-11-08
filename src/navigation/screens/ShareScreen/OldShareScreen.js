@@ -30,7 +30,7 @@ import {
   sendMessage,
 } from "react-native-wifi-p2p";
 
-export default function ShareScreen({ navigation }) {
+export default function OldShareScreen({ navigation }) {
   const styles = ShareScreenStyles;
 
   const [step, setStep] = React.useState(1);
@@ -49,86 +49,23 @@ export default function ShareScreen({ navigation }) {
     setIsPasswordCorrect(false);
     setPassword("");
 
-    try {
-      await initialize();
-      // since it's required in Android >= 6.0
-      const granted = await PermissionsAndroid.request(PermissionsAndroid.PERMISSIONS.ACCESS_COARSE_LOCATION, {
-        title: "Access to wi-fi P2P mode",
-        message: "ACCESS_COARSE_LOCATION",
-      });
-
-      console.log(granted === PermissionsAndroid.RESULTS.GRANTED ? "You can use the p2p mode" : "Permission denied: p2p mode will not work");
-
-      this.peersUpdatesSubscription = subscribeOnPeersUpdates(this.handleNewPeers);
-      this.connectionInfoUpdatesSubscription = subscribeOnConnectionInfoUpdates(this.handleNewInfo);
-      this.thisDeviceChangedSubscription = subscribeOnThisDeviceChanged(this.handleThisDeviceChanged);
-
-      const status = await startDiscoveringPeers();
-
-      console.log("startDiscoveringPeers status: ", status);
-      onGetAvailableDevices();
-    } catch (e) {
-      console.error(e);
+    const granted = await PermissionsAndroid.request(PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION, {
+      title: "Location permission is required for WiFi connections",
+      message: "This app needs location permission as this is required  " + "to scan for wifi networks.",
+      buttonNegative: "DENY",
+      buttonPositive: "ALLOW",
+    });
+    if (granted === PermissionsAndroid.RESULTS.GRANTED) {
+      // You can now use react-native-wifi-reborn
+      console.log("Wifi Permission Granted");
+      let wifiList = await getWifiConnectionList();
+      setDeviceList(wifiList);
+    } else {
+      // Permission denied
+      console.log("Wifi Permission Denied");
     }
   }, []);
 
-  const handleNewPeers = ({ devices }) => {
-    console.log("OnPeersUpdated", devices);
-    setDeviceList(devices);
-  };
-
-  const handleThisDeviceChanged = (groupInfo) => {
-    console.log("THIS_DEVICE_CHANGED_ACTION", groupInfo);
-  };
-
-  const connectToFirstDevice = () => {
-    console.log("Connect to: ", deviceList[0]);
-    connect(deviceList[0].deviceAddress)
-      .then(() => console.log("Successfully connected"))
-      .catch((err) => console.error("Something gone wrong. Details: ", err));
-  };
-
-  const onCancelConnect = () => {
-    cancelConnect()
-      .then(() => console.log("cancelConnect", "Connection successfully canceled"))
-      .catch((err) => console.error("cancelConnect", "Something gone wrong. Details: ", err));
-  };
-
-  const onCreateGroup = () => {
-    createGroup()
-      .then(() => console.log("Group created successfully!"))
-      .catch((err) => console.error("Something gone wrong. Details: ", err));
-  };
-
-  const onRemoveGroup = () => {
-    removeGroup()
-      .then(() => console.log("Currently you don't belong to group!"))
-      .catch((err) => console.error("Something gone wrong. Details: ", err));
-  };
-
-  const onStopInvestigation = () => {
-    stopDiscoveringPeers()
-      .then(() => console.log("Stopping of discovering was successful"))
-      .catch((err) => console.error(`Something is gone wrong. Maybe your WiFi is disabled? Error details`, err));
-  };
-
-  const onStartInvestigate = () => {
-    startDiscoveringPeers()
-      .then((status) => console.log("startDiscoveringPeers", `Status of discovering peers: ${status}`))
-      .catch((err) => console.error(`Something is gone wrong. Maybe your WiFi is disabled? Error details: ${err}`));
-  };
-
-  const onGetAvailableDevices = () => {
-    getAvailablePeers().then((peers) => console.log(peers));
-  };
-
-  const onGetConnectionInfo = () => {
-    getConnectionInfo().then((info) => console.log("getConnectionInfo", info));
-  };
-
-  const onGetGroupInfo = () => {
-    getGroupInfo().then((info) => console.log("getGroupInfo", info));
-  };
   const getWifiConnectionList = async () => {
     return WifiManager.reScanAndLoadWifiList()
       .then((list) => {

@@ -1,12 +1,13 @@
 import * as React from "react";
 import { Text } from "react-native";
+import { Searchbar } from "react-native-paper";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { searchScreenStyles } from "./SearchScreen.styles";
+import { searchScreenStyles as styles } from "./SearchScreen.styles";
 
 export default function SearchScreen({ navigation }) {
   return (
-    <SafeAreaView style={searchScreenStyles.container}>
-      <Text>Search Screen</Text>
+    <SafeAreaView style={styles.container}>
+      <Searchbar placeholder="Search for courses" style={styles.searchbar} />
     </SafeAreaView>
   );
 }

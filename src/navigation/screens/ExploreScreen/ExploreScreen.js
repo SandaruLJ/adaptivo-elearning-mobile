@@ -10,19 +10,9 @@ export default function ExploreScreen({ navigation }) {
     <SafeAreaView style={exploreScreenStyles.container}>
       <Header />
       <ScrollView style={exploreScreenStyles.scrollView}>
-        <CustomScrollView
-          title="Ongoing Courses"
-          subtitle="10 enrolled courses"
-          type="course-progress"
-        />
-        <CustomScrollView
-          title="Popular Courses"
-          type="course-details"
-        />
-        <CustomScrollView
-          title="Categories"
-          type="categories"
-        />
+        <CustomScrollView title="Ongoing Courses" subtitle="2 enrolled courses" type="course-progress" navigation={navigation} />
+        <CustomScrollView title="Popular Courses" type="course-details" navigation={navigation} />
+        <CustomScrollView title="Categories" type="categories" navigation={navigation} />
       </ScrollView>
     </SafeAreaView>
   );

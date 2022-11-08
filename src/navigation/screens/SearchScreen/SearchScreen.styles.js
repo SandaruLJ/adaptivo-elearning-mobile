@@ -5,7 +5,10 @@ export const searchScreenStyles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.white,
-    alignItems: "center",
-    justifyContent: "center",
+  },
+  searchbar: {
+    marginTop: 5,
+    marginHorizontal: 20,
+    backgroundColor: "#f7f7f7",
   },
 });

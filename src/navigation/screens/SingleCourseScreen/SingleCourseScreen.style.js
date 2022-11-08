@@ -8,6 +8,11 @@ export const singleCourseScreenStyles = StyleSheet.create({
     // alignItems: "center",
     flexDirection: "column",
   },
+  loadingContainer: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+  },
   backgroundVideo: {
     height: 250,
     width: "100%",
