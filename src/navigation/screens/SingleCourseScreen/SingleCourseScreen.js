@@ -19,6 +19,8 @@ import { getUserCourseById } from "../../../services/usercourse.service";
 import { checkFreeStorage, setDownloadQuality } from "../../../utils/smartDownloadAgent";
 import { colors } from "../../../utils/colors";
 import { TabRouter } from "react-navigation";
+import NoteDisplay from "../../../components/NoteDisplay/NoteDisplay";
+import PdfViewer from "../../../components/PdfViewer/PdfViewer";
 
 export default function SingleCourseScreen({ route, navigation }) {
   const style = singleCourseScreenStyles;
@@ -132,6 +134,8 @@ export default function SingleCourseScreen({ route, navigation }) {
       <ScrollView style={{ flex: 1, flexDirection: "column" }} nestedScrollEnabled={true}>
         <View style={{ height: 700 }}>
           {data && (type == "video" || type == "realExampleVideo" || type == "additionalVideo") && <VideoPlayer src={body} isAllDownloaded={isAllDownloaded} />}
+          {data && type == "note" && <NoteDisplay note={body} />}
+          {data && (type == "visualNote" || type == "realExampleDoc" || type == "additionalMaterials" || type == "textRichFile") && <PdfViewer url={body} />}
 
           {data && (
             <View style={{ flex: 1, flexDirection: "column", justifyContent: "flex-start" }}>
