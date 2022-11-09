@@ -30,6 +30,12 @@ import {
   sendMessage,
 } from "react-native-wifi-p2p";
 
+import { Collapse, CollapseHeader, CollapseBody } from "accordion-collapse-react-native";
+import { ListItem } from "react-native-elements";
+import CheckBox from "@react-native-community/checkbox";
+import { getAllCoursesByUserId } from "../../../services/usercourse.service";
+import { Auth } from "aws-amplify";
+
 export default function ShareScreen({ navigation }) {
   const styles = ShareScreenStyles;
 
@@ -41,8 +47,26 @@ export default function ShareScreen({ navigation }) {
   const [deviceList, setDeviceList] = React.useState([]);
   const [status, setStatus] = React.useState(false);
   const [ssid, setSsid] = React.useState("");
+  const [selectedCheckbox, setSelectedCheckbox] = React.useState([]);
+  const [selectedUnits, setSelectedUnits] = React.useState({});
 
   let peersUpdatesSubscription, connectionInfoUpdatesSubscription, thisDeviceChangedSubscription;
+
+  const [ongoingCourses, setOngoingCourses] = React.useState([]);
+  const [isLoading, setIsLoading] = React.useState(false);
+
+  const getOngoingCourses = async (email) => {
+    setIsLoading(true);
+    const response = await getAllCoursesByUserId(email);
+    console.log("Done");
+    setOngoingCourses(response);
+    setIsLoading(false);
+  };
+  React.useEffect(() => {
+    Auth.currentAuthenticatedUser().then((data) => {
+      getOngoingCourses(data.attributes.email);
+    });
+  }, []);
 
   React.useEffect(async () => {
     setPasswordError("");
@@ -119,7 +143,10 @@ export default function ShareScreen({ navigation }) {
   };
 
   const onGetAvailableDevices = () => {
-    getAvailablePeers().then((peers) => console.log(peers));
+    getAvailablePeers().then((peers) => {
+      console.log(peers);
+      setDeviceList(peers.devices);
+    });
   };
 
   const onGetConnectionInfo = () => {
@@ -162,6 +189,104 @@ export default function ShareScreen({ navigation }) {
     }
   };
 
+  const onConnectToContentHubClick = async () => {
+    setStep(2);
+    const status = await startDiscoveringPeers();
+
+    console.log("startDiscoveringPeers status: ", status);
+    onGetAvailableDevices();
+  };
+
+  const onSelectCourseCheckbox = (id, value) => {
+    console.log(1);
+    if (value) {
+      const course = ongoingCourses.filter((elem) => elem._id == id);
+      let ids = [id];
+      let unitIds = [];
+      course[0].learningPath.map((section) => {
+        ids.push(section._id);
+        section.units.map((unit) => {
+          ids.push(unit._id);
+          unitIds.push(unit._id);
+        });
+      });
+      setSelectedCheckbox([...selectedCheckbox, ...ids]);
+      setSelectedUnits({ ...selectedUnits, [id]: unitIds });
+    } else {
+      const course = ongoingCourses.filter((elem) => elem._id == id);
+      let ids = [id];
+      course[0].learningPath.map((section) => {
+        ids.push(section._id);
+        section.units.map((unit) => {
+          ids.push(unit._id);
+        });
+      });
+      let temp = selectedCheckbox.filter((elem) => !ids.includes(elem));
+      setSelectedCheckbox(temp);
+      setSelectedUnits({ ...selectedUnits, [id]: [] });
+    }
+  };
+  const onSelectSectionCheckbox = (courseId, sectionId, value) => {
+    console.log(2);
+
+    if (value) {
+      const course = ongoingCourses.filter((elem) => elem._id == courseId);
+      const section = course[0].learningPath.filter((elem) => elem._id == sectionId);
+
+      let ids = [sectionId];
+      let unitIds = [];
+
+      section[0].units.map((unit) => {
+        ids.push(unit._id);
+        unitIds.push(unit._id);
+      });
+
+      setSelectedCheckbox([...selectedCheckbox, ...ids]);
+
+      if (selectedUnits.hasOwnProperty(courseId)) {
+        setSelectedUnits({ ...selectedUnits, [courseId]: [...selectedUnits[courseId], ...unitIds] });
+      } else {
+        setSelectedUnits({ ...selectedUnits, [courseId]: unitIds });
+      }
+    } else {
+      const course = ongoingCourses.filter((elem) => elem._id == courseId);
+      const section = course[0].learningPath.filter((elem) => elem._id == sectionId);
+
+      let ids = [sectionId];
+      let unitIds = [];
+      section[0].units.map((unit) => {
+        ids.push(unit._id);
+        unitIds.push(unit._id);
+      });
+      let temp = selectedCheckbox.filter((elem) => !ids.includes(elem));
+      setSelectedCheckbox(temp);
+
+      if (selectedUnits.hasOwnProperty(courseId)) {
+        let temp = selectedUnits[courseId].filter((elem) => !unitIds.includes(elem));
+        setSelectedUnits({ ...selectedUnits, [courseId]: temp });
+      }
+    }
+  };
+  const onSelectUnitCheckbox = (id, courseId, value) => {
+    if (value) {
+      setSelectedCheckbox([...selectedCheckbox, id]);
+      if (selectedUnits.hasOwnProperty(courseId)) {
+        setSelectedUnits({ ...selectedUnits, [courseId]: [...selectedUnits[courseId], id] });
+      } else {
+        setSelectedUnits({ ...selectedUnits, [courseId]: [id] });
+      }
+      console.log(selectedUnits);
+    } else {
+      let temp = selectedCheckbox.filter((elem) => elem != id);
+      setSelectedCheckbox(temp);
+      if (selectedUnits.hasOwnProperty(courseId)) {
+        let temp = selectedUnits[courseId].filter((elem) => elem != id);
+        setSelectedUnits({ ...selectedUnits, [courseId]: temp });
+      }
+      console.log(selectedUnits);
+    }
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       {step == 1 ? (
@@ -172,7 +297,7 @@ export default function ShareScreen({ navigation }) {
           {/* <Button mode="contained" dark={true} uppercase={false} color={colors.orange} style={styles.shareButton} onPress={() => setStep(6)}>
             Set Up as a Content Hub
           </Button> */}
-          <Button mode="contained" dark={true} uppercase={false} color={colors.orange} style={styles.shareButton} onPress={() => setStep(2)}>
+          <Button mode="contained" dark={true} uppercase={false} color={colors.orange} style={styles.shareButton} onPress={() => onConnectToContentHubClick()}>
             Connect to a Content Hub
           </Button>
         </View>
@@ -223,7 +348,16 @@ export default function ShareScreen({ navigation }) {
         </View>
       ) : step == 4 ? (
         <View style={styles.devicesContainer}>
-          <Headline style={styles.searchingHeading}>Enter Password</Headline>
+          <Headline style={styles.searchingHeading}>Select Transfer Type</Headline>
+          <View>
+            <Button mode="contained" dark={true} uppercase={false} color={colors.orange} style={styles.shareButton} onPress={() => onConnectToContentHubClick()}>
+              Automatic Transfer
+            </Button>
+            <Button mode="contained" dark={true} uppercase={false} color={colors.orange} style={styles.shareButton} onPress={() => setStep(5)}>
+              Manual Transfer
+            </Button>
+          </View>
+          {/* <Headline style={styles.searchingHeading}>Enter Password</Headline>
           <View>
             <TextInput
               label="Password"
@@ -261,13 +395,63 @@ export default function ShareScreen({ navigation }) {
                 onAnimationComplete={() => setStep(5)}
               />
             )}
-          </View>
-
+          </View> */}
           <Button mode="contained" dark={true} uppercase={false} color={"#999"} style={styles.shareButton} onPress={() => setStep(3)}>
             Connect Another Device
           </Button>
         </View>
       ) : step == 5 ? (
+        <View style={styles.devicesContainer}>
+          <Headline style={styles.searchingHeading}>Manual Transfer</Headline>
+          <ScrollView style={styles.accordion}>
+            {ongoingCourses.map((course) => {
+              return (
+                <Collapse style={styles.accordion} key={course._id}>
+                  <CollapseHeader>
+                    <View style={styles.accordionHeader}>
+                      <View style={styles.checkboxContainer}>
+                        <CheckBox value={selectedCheckbox.includes(course._id)} onValueChange={(newValue) => onSelectCourseCheckbox(course._id, newValue)} />
+                        <Text>{course.courseId.title}</Text>
+                      </View>
+                    </View>
+                  </CollapseHeader>
+                  <CollapseBody>
+                    {course.learningPath.map((section) => {
+                      return (
+                        <Collapse key={section._id}>
+                          <CollapseHeader>
+                            <View style={styles.sectionHeader}>
+                              <View style={styles.checkboxContainer}>
+                                <CheckBox value={selectedCheckbox.includes(section._id)} onValueChange={(newValue) => onSelectSectionCheckbox(course._id, section._id, newValue)} />
+                                <Text>{section.name}</Text>
+                              </View>
+                            </View>
+                          </CollapseHeader>
+                          <CollapseBody>
+                            {section.units.map((unit) => {
+                              return (
+                                <ListItem key={unit._id} style={styles.unitList}>
+                                  <View style={styles.checkboxContainer}>
+                                    <CheckBox value={selectedCheckbox.includes(unit._id)} onValueChange={(newValue) => onSelectUnitCheckbox(unit._id, course._id, newValue)} />
+                                    <Text>{unit.name}</Text>
+                                  </View>
+                                </ListItem>
+                              );
+                            })}
+                          </CollapseBody>
+                        </Collapse>
+                      );
+                    })}
+                  </CollapseBody>
+                </Collapse>
+              );
+            })}
+            <Button mode="contained" dark={true} uppercase={false} color={colors.orange} style={styles.shareButton} onPress={() => setStep(3)}>
+              Start Transfer
+            </Button>
+          </ScrollView>
+        </View>
+      ) : step == 10 ? (
         <View style={styles.devicesContainer}>
           <Headline style={styles.searchingHeading}>Connected to the Device</Headline>
 

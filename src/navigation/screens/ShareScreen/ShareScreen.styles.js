@@ -79,4 +79,29 @@ export const ShareScreenStyles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
+  accordionHeader: {
+    backgroundColor: "#e5e5e5",
+    width: "100%",
+    padding: 20,
+  },
+  sectionHeader: {
+    backgroundColor: "#f7f7f7",
+    width: "100%",
+    padding: 20,
+    paddingLeft: 30,
+  },
+  accordion: {
+    width: "95%",
+    marginHorizontal: 10,
+    marginTop: 15,
+  },
+  checkboxContainer: {
+    // flex: 1,
+    alignItems: "center",
+    justifyContent: "flex-start",
+    flexDirection: "row",
+  },
+  unitList: {
+    paddingLeft: 20,
+  },
 });
