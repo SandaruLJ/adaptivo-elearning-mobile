@@ -14,6 +14,8 @@ import { useState } from "react";
 import { useEffect } from "react";
 import { getAllCoursesByUserId } from "../../../services/usercourse.service";
 import { myCoursesScreenStyles as style } from "./MyCoursesScreen.style";
+import { useNetInfo } from "@react-native-community/netinfo";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const window = Dimensions.get("window");
 const screen = Dimensions.get("screen");
@@ -23,6 +25,7 @@ export default function MyCoursesScreen({ navigation }) {
   const [selectedTab, setSelectedTab] = React.useState("ongoing");
   const [ongoingCourses, setOngoingCourses] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
+  const netInfo = useNetInfo();
 
   const getOngoingCourses = async (email) => {
     setIsLoading(true);
@@ -30,10 +33,20 @@ export default function MyCoursesScreen({ navigation }) {
     setOngoingCourses(response);
     setIsLoading(false);
   };
-  useEffect(() => {
-    Auth.currentAuthenticatedUser().then((data) => {
-      getOngoingCourses(data.attributes.email);
-    });
+
+  useEffect(async () => {
+    if (netInfo.isConnected) {
+      Auth.currentAuthenticatedUser().then((data) => {
+        getOngoingCourses(data.attributes.email);
+      });
+    } else {
+      try {
+        const jsonValue = await AsyncStorage.getItem("courses");
+        setOngoingCourses(JSON.parse(jsonValue));
+      } catch (e) {
+        console.log(e);
+      }
+    }
   }, []);
 
   const handleTabChange = (tab) => {

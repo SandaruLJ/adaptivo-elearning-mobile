@@ -21,6 +21,8 @@ import { colors } from "../../../utils/colors";
 import { TabRouter } from "react-navigation";
 import NoteDisplay from "../../../components/NoteDisplay/NoteDisplay";
 import PdfViewer from "../../../components/PdfViewer/PdfViewer";
+import { useNetInfo } from "@react-native-community/netinfo";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export default function SingleCourseScreen({ route, navigation }) {
   const style = singleCourseScreenStyles;
@@ -31,6 +33,8 @@ export default function SingleCourseScreen({ route, navigation }) {
   const body = useSelector((state) => state.course.contentBody);
   const selectedUnitName = useSelector((state) => state.course.selectedUnitName);
   const courseName = useSelector((state) => state.course.courseName);
+  const [isConnected, setIsConnected] = useState(false);
+  const netInfo = useNetInfo();
 
   const [isAllDownloaded, setIsAllDownloaded] = useState(false);
   const filesToDownload = [
@@ -47,21 +51,41 @@ export default function SingleCourseScreen({ route, navigation }) {
     //Fetches the data from the db
     // "632321a83d306c8028f4e711"
     // const response = await getUserCourseById(route.params.id);
-    setIsLoading(true);
-    const response = await getUserCourseById("632321a83d306c8028f4e711");
-    setData(response);
-    dispatch(courseActions.setCourseName(response.title));
-    dispatch(courseActions.setCurriculum([...response.learningPath]));
-
-    dispatch(courseActions.setSelectedUnit({ section: 0, unit: 0 }));
-    dispatch(courseActions.setNextUnit());
-    console.log("done");
-    setIsLoading(false);
+    if (netInfo.isConnected) {
+      setIsLoading(true);
+      const response = await getUserCourseById("632321a83d306c8028f4e711");
+      setData(response);
+      dispatch(courseActions.setCourseName(response.title));
+      dispatch(courseActions.setCurriculum([...response.learningPath]));
+      dispatch(courseActions.setSelectedUnit({ section: 0, unit: 0 }));
+      dispatch(courseActions.setNextUnit());
+      setIsLoading(false);
+    } else {
+      try {
+        setIsLoading(true);
+        const jsonValue = await AsyncStorage.getItem("courses");
+        const course = JSON.parse(jsonValue);
+        const filteredCourse = course.filter((elem) => elem._id == route.params.id);
+        const response = filteredCourse[0];
+        setData(response);
+        dispatch(courseActions.setCourseName(response.title));
+        dispatch(courseActions.setCurriculum([...response.learningPath]));
+        dispatch(courseActions.setSelectedUnit({ section: 0, unit: 0 }));
+        dispatch(courseActions.setNextUnit());
+        setIsLoading(false);
+      } catch (e) {
+        console.log(e);
+      }
+    }
   };
   useEffect(() => {
     setData();
     getData();
   }, [route.params.id]);
+
+  useEffect(() => {
+    setIsConnected(netInfo.setIsConnected);
+  }, [netInfo.isConnected]);
 
   const checkPermission = async () => {
     console.log("Check Permission");

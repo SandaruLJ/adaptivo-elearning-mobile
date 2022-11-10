@@ -83,6 +83,13 @@ export default function ShareScreen({ navigation }) {
 
       console.log(granted === PermissionsAndroid.RESULTS.GRANTED ? "You can use the p2p mode" : "Permission denied: p2p mode will not work");
 
+      const granted2 = await PermissionsAndroid.request(PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION, {
+        title: "Access to wi-fi P2P mode",
+        message: "ACCESS_Fine_LOCATION",
+      });
+
+      console.log(granted2 === PermissionsAndroid.RESULTS.GRANTED ? "You can use the p2p mode" : "Permission denied: p2p mode will not work");
+
       this.peersUpdatesSubscription = subscribeOnPeersUpdates(this.handleNewPeers);
       this.connectionInfoUpdatesSubscription = subscribeOnConnectionInfoUpdates(this.handleNewInfo);
       this.thisDeviceChangedSubscription = subscribeOnThisDeviceChanged(this.handleThisDeviceChanged);
@@ -105,10 +112,13 @@ export default function ShareScreen({ navigation }) {
     console.log("THIS_DEVICE_CHANGED_ACTION", groupInfo);
   };
 
-  const connectToFirstDevice = () => {
-    console.log("Connect to: ", deviceList[0]);
-    connect(deviceList[0].deviceAddress)
-      .then(() => console.log("Successfully connected"))
+  const connectToDevice = (address) => {
+    console.log("Connect to: ", address);
+    connect(address)
+      .then(() => {
+        console.log("Successfully connected");
+        onGetConnectionInfo();
+      })
       .catch((err) => console.error("Something gone wrong. Details: ", err));
   };
 
@@ -120,7 +130,10 @@ export default function ShareScreen({ navigation }) {
 
   const onCreateGroup = () => {
     createGroup()
-      .then(() => console.log("Group created successfully!"))
+      .then(() => {
+        console.log("Group created successfully!");
+        onGetGroupInfo();
+      })
       .catch((err) => console.error("Something gone wrong. Details: ", err));
   };
 
@@ -156,37 +169,15 @@ export default function ShareScreen({ navigation }) {
   const onGetGroupInfo = () => {
     getGroupInfo().then((info) => console.log("getGroupInfo", info));
   };
-  const getWifiConnectionList = async () => {
-    return WifiManager.reScanAndLoadWifiList()
-      .then((list) => {
-        return list;
-      })
-      .catch((e) => {
-        console.log(e);
-      });
+  const onSendMessage = () => {
+    sendMessage("Hello world!")
+      .then((metaInfo) => console.log("Message sent successfully", metaInfo))
+      .catch((err) => console.log("Error while message sending", err));
   };
-
-  const verifyPassword = async () => {
-    console.log;
-    if (password == null || password.length == 0) {
-      setPasswordError("Please Enter a Password");
-      setIsPasswordCorrect(false);
-    } else if (password == constants.password) {
-      setPasswordError("");
-      setIsPasswordCorrect(true);
-      if (status) {
-        WifiManager.connectToProtectedSSID(ssid, password, false)
-          .then((res) => {
-            console.log(res);
-          })
-          .catch((e) => {
-            console.log(e);
-          });
-      }
-    } else {
-      setIsPasswordCorrect(false);
-      setPasswordError("Incorrect Password");
-    }
+  const onReceiveMessage = () => {
+    receiveMessage()
+      .then((msg) => console.log("Message received successfully", msg))
+      .catch((err) => console.log("Error while message receiving", err));
   };
 
   const onConnectToContentHubClick = async () => {
@@ -287,6 +278,65 @@ export default function ShareScreen({ navigation }) {
     }
   };
 
+  const setupContentHub = () => {
+    setStep(6);
+    onCreateGroup();
+  };
+
+  const onSendFile = () => {
+    //const url = '/storage/sdcard0/Music/Rammstein:Amerika.mp3';
+    const url = "/storage/emulated/0/Music/Bullet For My Valentine:Letting You Go.mp3";
+    PermissionsAndroid.request(PermissionsAndroid.PERMISSIONS.READ_EXTERNAL_STORAGE, {
+      title: "Access to read",
+      message: "READ_EXTERNAL_STORAGE",
+    })
+      .then((granted) => {
+        if (granted === PermissionsAndroid.RESULTS.GRANTED) {
+          console.log("You can use the storage");
+        } else {
+          console.log("Storage permission denied");
+        }
+      })
+      .then(() => {
+        return PermissionsAndroid.request(PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE, {
+          title: "Access to write",
+          message: "WRITE_EXTERNAL_STORAGE",
+        });
+      })
+      .then(() => {
+        return sendFile(url)
+          .then((metaInfo) => console.log("File sent successfully", metaInfo))
+          .catch((err) => console.log("Error while file sending", err));
+      })
+      .catch((err) => console.log(err));
+  };
+
+  const onReceiveFile = () => {
+    PermissionsAndroid.request(PermissionsAndroid.PERMISSIONS.READ_EXTERNAL_STORAGE, {
+      title: "Access to read",
+      message: "READ_EXTERNAL_STORAGE",
+    })
+      .then((granted) => {
+        if (granted === PermissionsAndroid.RESULTS.GRANTED) {
+          console.log("You can use the storage");
+        } else {
+          console.log("Storage permission denied");
+        }
+      })
+      .then(() => {
+        return PermissionsAndroid.request(PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE, {
+          title: "Access to write",
+          message: "WRITE_EXTERNAL_STORAGE",
+        });
+      })
+      .then(() => {
+        return receiveFile("/storage/emulated/0/Music/", "BFMV:Letting You Go.mp3")
+          .then(() => console.log("File received successfully"))
+          .catch((err) => console.log("Error while file receiving", err));
+      })
+      .catch((err) => console.log(err));
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       {step == 1 ? (
@@ -294,9 +344,9 @@ export default function ShareScreen({ navigation }) {
           <Headline style={styles.shareHeading}>Adaptivo Sharing</Headline>
           <Caption>Share courses among your peers with ease</Caption>
           <Image source={sharingImage} style={styles.sharingImage} />
-          {/* <Button mode="contained" dark={true} uppercase={false} color={colors.orange} style={styles.shareButton} onPress={() => setStep(6)}>
+          <Button mode="contained" dark={true} uppercase={false} color={colors.orange} style={styles.shareButton} onPress={() => setupContentHub}>
             Set Up as a Content Hub
-          </Button> */}
+          </Button>
           <Button mode="contained" dark={true} uppercase={false} color={colors.orange} style={styles.shareButton} onPress={() => onConnectToContentHubClick()}>
             Connect to a Content Hub
           </Button>
@@ -316,16 +366,17 @@ export default function ShareScreen({ navigation }) {
             {deviceList.map((device, i) => {
               return (
                 <Text
-                  key={device.BSSID}
+                  key={device.deviceAddress}
                   style={styles.wifiDevices}
                   onPress={() => {
+                    connectToDevice(device.deviceAddress);
                     setStep(4);
                     setIsConnectClicked(false);
                     setPassword("");
                     setPasswordError("");
                   }}
                 >
-                  {device.SSID}
+                  {device.deviceName}
                 </Text>
               );
             })}
@@ -402,9 +453,9 @@ export default function ShareScreen({ navigation }) {
         </View>
       ) : step == 5 ? (
         <View style={styles.devicesContainer}>
-          <Headline style={styles.searchingHeading}>Manual Transfer</Headline>
+          <Headline style={styles.searchingHeading}>Select Files</Headline>
           <ScrollView style={styles.accordion}>
-            {ongoingCourses.map((course) => {
+            {/* {ongoingCourses.map((course) => {
               return (
                 <Collapse style={styles.accordion} key={course._id}>
                   <CollapseHeader>
@@ -445,11 +496,23 @@ export default function ShareScreen({ navigation }) {
                   </CollapseBody>
                 </Collapse>
               );
-            })}
-            <Button mode="contained" dark={true} uppercase={false} color={colors.orange} style={styles.shareButton} onPress={() => setStep(3)}>
+            })} */}
+            <Button mode="contained" dark={true} uppercase={false} color={colors.orange} style={styles.shareButton} onPress={() => onSendMessage()}>
               Start Transfer
             </Button>
           </ScrollView>
+        </View>
+      ) : step == 6 ? (
+        <View style={styles.devicesContainer}>
+          <Headline style={styles.searchingHeading}>Connected to the Device</Headline>
+
+          <Button mode="contained" dark={true} uppercase={false} color={colors.orange} style={styles.shareButton} onPress={() => onReceiveMessage()}>
+            Receive Message
+          </Button>
+
+          <Button mode="contained" dark={true} uppercase={false} color={colors.orange} style={styles.shareButton} onPress={() => onReceiveMessage()}>
+            Send Files
+          </Button>
         </View>
       ) : step == 10 ? (
         <View style={styles.devicesContainer}>

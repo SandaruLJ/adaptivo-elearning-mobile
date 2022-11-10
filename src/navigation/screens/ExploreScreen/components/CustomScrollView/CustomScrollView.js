@@ -1,3 +1,5 @@
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useNetInfo } from "@react-native-community/netinfo";
 import { Auth } from "aws-amplify";
 import React from "react";
 import { useEffect } from "react";
@@ -27,16 +29,30 @@ const categories = [
 
 export default function CustomScrollView({ title, subtitle, type, navigation }) {
   const [ongoingCourses, setOngoingCourses] = useState([]);
+  const netInfo = useNetInfo();
 
   const getOngoingCourses = async (email) => {
     const response = await getAllCoursesByUserId(email);
-    setOngoingCourses(response);
+    if (response) {
+      setOngoingCourses(response);
+    }
   };
-  useEffect(() => {
-    Auth.currentAuthenticatedUser().then((data) => {
-      getOngoingCourses(data.attributes.email);
-    });
+
+  useEffect(async () => {
+    if (netInfo.isConnected) {
+      Auth.currentAuthenticatedUser().then((data) => {
+        getOngoingCourses(data.attributes.email);
+      });
+    } else {
+      try {
+        const jsonValue = await AsyncStorage.getItem("courses");
+        setOngoingCourses(JSON.parse(jsonValue));
+      } catch (e) {
+        console.log(e);
+      }
+    }
   }, []);
+
   return (
     <View style={styles.container}>
       <Text style={styles.title}>{title}</Text>
