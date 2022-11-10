@@ -1,14 +1,21 @@
 import * as React from "react";
-import { Text, Dimensions } from "react-native";
+import { Text, Dimensions, ScrollView } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { View } from "react-native";
 import { myCoursesScreenStyles } from "./MyCoursesScreen.style";
-import { Button, Headline, IconButton } from "react-native-paper";
+import { ActivityIndicator, Button, Headline, IconButton } from "react-native-paper";
 import { colors } from "../../../utils/colors";
 import { AnimatedCircularProgress } from "react-native-circular-progress";
 import { ImageBackground } from "react-native";
 import LinearGradient from "react-native-linear-gradient";
 import SingleCourseContainer from "./SingleCourseContainer";
+import { Auth } from "aws-amplify";
+import { useState } from "react";
+import { useEffect } from "react";
+import { getAllCoursesByUserId } from "../../../services/usercourse.service";
+import { myCoursesScreenStyles as style } from "./MyCoursesScreen.style";
+import { useNetInfo } from "@react-native-community/netinfo";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const window = Dimensions.get("window");
 const screen = Dimensions.get("screen");
@@ -16,6 +23,31 @@ const screen = Dimensions.get("screen");
 export default function MyCoursesScreen({ navigation }) {
   const [dimensions, setDimensions] = React.useState({ window, screen });
   const [selectedTab, setSelectedTab] = React.useState("ongoing");
+  const [ongoingCourses, setOngoingCourses] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const netInfo = useNetInfo();
+
+  const getOngoingCourses = async (email) => {
+    setIsLoading(true);
+    const response = await getAllCoursesByUserId(email);
+    setOngoingCourses(response);
+    setIsLoading(false);
+  };
+
+  useEffect(async () => {
+    if (netInfo.isConnected) {
+      Auth.currentAuthenticatedUser().then((data) => {
+        getOngoingCourses(data.attributes.email);
+      });
+    } else {
+      try {
+        const jsonValue = await AsyncStorage.getItem("courses");
+        setOngoingCourses(JSON.parse(jsonValue));
+      } catch (e) {
+        console.log(e);
+      }
+    }
+  }, []);
 
   const handleTabChange = (tab) => {
     setSelectedTab(tab);
@@ -59,9 +91,36 @@ export default function MyCoursesScreen({ navigation }) {
           Completed
         </Button>
       </View>
-      <View style={styles.myCourseBody}>
-        <SingleCourseContainer navigation={navigation} />
-      </View>
+      {selectedTab == "ongoing" && (
+        <View style={styles.myCourseBody}>
+          {isLoading ? (
+            <View style={style.loadingContainer}>
+              <ActivityIndicator size="large" color={colors.orange} />
+            </View>
+          ) : (
+            <ScrollView style={style.myCoursesContainer}>
+              {ongoingCourses.map((course) => (
+                <SingleCourseContainer
+                  key={course._id}
+                  navigation={navigation}
+                  id={course._id}
+                  name={course.courseId.title}
+                  completed={2}
+                  total={course.learningPath[0].units.length + course.learningPath[1].units.length}
+                  thumbnail={course.courseId.thumbnail.url}
+                  progress={course.progress}
+                  instructor={"Mr.Chandana Jayasinghe"}
+                />
+              ))}
+            </ScrollView>
+          )}
+        </View>
+      )}
+      {selectedTab == "completed" && (
+        <View style={styles.myCourseBody}>
+          <Text>No completed courses</Text>
+        </View>
+      )}
     </SafeAreaView>
   );
 }

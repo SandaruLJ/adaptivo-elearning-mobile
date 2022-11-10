@@ -1,5 +1,5 @@
 import * as React from "react";
-import { Text, View, Image } from "react-native";
+import { Text, View, Image, ScrollView } from "react-native";
 import { AnimatedCircularProgress } from "react-native-circular-progress";
 import { Button, Caption, Headline, TextInput } from "react-native-paper";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -9,6 +9,32 @@ const sharingImage = require("../../../../assets/images/share.png");
 import { PermissionsAndroid } from "react-native";
 import WifiManager from "react-native-wifi-reborn";
 import { constants } from "../../../utils/constants";
+
+import {
+  initialize,
+  startDiscoveringPeers,
+  stopDiscoveringPeers,
+  subscribeOnConnectionInfoUpdates,
+  subscribeOnThisDeviceChanged,
+  subscribeOnPeersUpdates,
+  connect,
+  cancelConnect,
+  createGroup,
+  removeGroup,
+  getAvailablePeers,
+  sendFile,
+  receiveFile,
+  getConnectionInfo,
+  getGroupInfo,
+  receiveMessage,
+  sendMessage,
+} from "react-native-wifi-p2p";
+
+import { Collapse, CollapseHeader, CollapseBody } from "accordion-collapse-react-native";
+import { ListItem } from "react-native-elements";
+import CheckBox from "@react-native-community/checkbox";
+import { getAllCoursesByUserId } from "../../../services/usercourse.service";
+import { Auth } from "aws-amplify";
 
 export default function ShareScreen({ navigation }) {
   const styles = ShareScreenStyles;
@@ -21,60 +47,294 @@ export default function ShareScreen({ navigation }) {
   const [deviceList, setDeviceList] = React.useState([]);
   const [status, setStatus] = React.useState(false);
   const [ssid, setSsid] = React.useState("");
+  const [selectedCheckbox, setSelectedCheckbox] = React.useState([]);
+  const [selectedUnits, setSelectedUnits] = React.useState({});
+
+  let peersUpdatesSubscription, connectionInfoUpdatesSubscription, thisDeviceChangedSubscription;
+
+  const [ongoingCourses, setOngoingCourses] = React.useState([]);
+  const [isLoading, setIsLoading] = React.useState(false);
+
+  const getOngoingCourses = async (email) => {
+    setIsLoading(true);
+    const response = await getAllCoursesByUserId(email);
+    console.log("Done");
+    setOngoingCourses(response);
+    setIsLoading(false);
+  };
+  React.useEffect(() => {
+    Auth.currentAuthenticatedUser().then((data) => {
+      getOngoingCourses(data.attributes.email);
+    });
+  }, []);
 
   React.useEffect(async () => {
     setPasswordError("");
     setIsPasswordCorrect(false);
     setPassword("");
 
-    const granted = await PermissionsAndroid.request(PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION, {
-      title: "Location permission is required for WiFi connections",
-      message: "This app needs location permission as this is required  " + "to scan for wifi networks.",
-      buttonNegative: "DENY",
-      buttonPositive: "ALLOW",
-    });
-    if (granted === PermissionsAndroid.RESULTS.GRANTED) {
-      // You can now use react-native-wifi-reborn
-      console.log("Wifi Permission Granted");
-      let wifiList = await getWifiConnectionList();
-      setDeviceList(wifiList);
-    } else {
-      // Permission denied
-      console.log("Wifi Permission Denied");
+    try {
+      await initialize();
+      // since it's required in Android >= 6.0
+      const granted = await PermissionsAndroid.request(PermissionsAndroid.PERMISSIONS.ACCESS_COARSE_LOCATION, {
+        title: "Access to wi-fi P2P mode",
+        message: "ACCESS_COARSE_LOCATION",
+      });
+
+      console.log(granted === PermissionsAndroid.RESULTS.GRANTED ? "You can use the p2p mode" : "Permission denied: p2p mode will not work");
+
+      const granted2 = await PermissionsAndroid.request(PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION, {
+        title: "Access to wi-fi P2P mode",
+        message: "ACCESS_Fine_LOCATION",
+      });
+
+      console.log(granted2 === PermissionsAndroid.RESULTS.GRANTED ? "You can use the p2p mode" : "Permission denied: p2p mode will not work");
+
+      this.peersUpdatesSubscription = subscribeOnPeersUpdates(this.handleNewPeers);
+      this.connectionInfoUpdatesSubscription = subscribeOnConnectionInfoUpdates(this.handleNewInfo);
+      this.thisDeviceChangedSubscription = subscribeOnThisDeviceChanged(this.handleThisDeviceChanged);
+
+      const status = await startDiscoveringPeers();
+
+      console.log("startDiscoveringPeers status: ", status);
+      onGetAvailableDevices();
+    } catch (e) {
+      console.error(e);
     }
   }, []);
 
-  const getWifiConnectionList = async () => {
-    return WifiManager.reScanAndLoadWifiList()
-      .then((list) => {
-        return list;
-      })
-      .catch((e) => {
-        console.log(e);
-      });
+  const handleNewPeers = ({ devices }) => {
+    console.log("OnPeersUpdated", devices);
+    setDeviceList(devices);
   };
 
-  const verifyPassword = async () => {
-    console.log;
-    if (password == null || password.length == 0) {
-      setPasswordError("Please Enter a Password");
-      setIsPasswordCorrect(false);
-    } else if (password == constants.password) {
-      setPasswordError("");
-      setIsPasswordCorrect(true);
-      if (status) {
-        WifiManager.connectToProtectedSSID(ssid, password, false)
-          .then((res) => {
-            console.log(res);
-          })
-          .catch((e) => {
-            console.log(e);
-          });
+  const handleThisDeviceChanged = (groupInfo) => {
+    console.log("THIS_DEVICE_CHANGED_ACTION", groupInfo);
+  };
+
+  const connectToDevice = (address) => {
+    console.log("Connect to: ", address);
+    connect(address)
+      .then(() => {
+        console.log("Successfully connected");
+        onGetConnectionInfo();
+      })
+      .catch((err) => console.error("Something gone wrong. Details: ", err));
+  };
+
+  const onCancelConnect = () => {
+    cancelConnect()
+      .then(() => console.log("cancelConnect", "Connection successfully canceled"))
+      .catch((err) => console.error("cancelConnect", "Something gone wrong. Details: ", err));
+  };
+
+  const onCreateGroup = () => {
+    createGroup()
+      .then(() => {
+        console.log("Group created successfully!");
+        onGetGroupInfo();
+      })
+      .catch((err) => console.error("Something gone wrong. Details: ", err));
+  };
+
+  const onRemoveGroup = () => {
+    removeGroup()
+      .then(() => console.log("Currently you don't belong to group!"))
+      .catch((err) => console.error("Something gone wrong. Details: ", err));
+  };
+
+  const onStopInvestigation = () => {
+    stopDiscoveringPeers()
+      .then(() => console.log("Stopping of discovering was successful"))
+      .catch((err) => console.error(`Something is gone wrong. Maybe your WiFi is disabled? Error details`, err));
+  };
+
+  const onStartInvestigate = () => {
+    startDiscoveringPeers()
+      .then((status) => console.log("startDiscoveringPeers", `Status of discovering peers: ${status}`))
+      .catch((err) => console.error(`Something is gone wrong. Maybe your WiFi is disabled? Error details: ${err}`));
+  };
+
+  const onGetAvailableDevices = () => {
+    getAvailablePeers().then((peers) => {
+      console.log(peers);
+      setDeviceList(peers.devices);
+    });
+  };
+
+  const onGetConnectionInfo = () => {
+    getConnectionInfo().then((info) => console.log("getConnectionInfo", info));
+  };
+
+  const onGetGroupInfo = () => {
+    getGroupInfo().then((info) => console.log("getGroupInfo", info));
+  };
+  const onSendMessage = () => {
+    sendMessage("Hello world!")
+      .then((metaInfo) => console.log("Message sent successfully", metaInfo))
+      .catch((err) => console.log("Error while message sending", err));
+  };
+  const onReceiveMessage = () => {
+    receiveMessage()
+      .then((msg) => console.log("Message received successfully", msg))
+      .catch((err) => console.log("Error while message receiving", err));
+  };
+
+  const onConnectToContentHubClick = async () => {
+    setStep(2);
+    const status = await startDiscoveringPeers();
+
+    console.log("startDiscoveringPeers status: ", status);
+    onGetAvailableDevices();
+  };
+
+  const onSelectCourseCheckbox = (id, value) => {
+    console.log(1);
+    if (value) {
+      const course = ongoingCourses.filter((elem) => elem._id == id);
+      let ids = [id];
+      let unitIds = [];
+      course[0].learningPath.map((section) => {
+        ids.push(section._id);
+        section.units.map((unit) => {
+          ids.push(unit._id);
+          unitIds.push(unit._id);
+        });
+      });
+      setSelectedCheckbox([...selectedCheckbox, ...ids]);
+      setSelectedUnits({ ...selectedUnits, [id]: unitIds });
+    } else {
+      const course = ongoingCourses.filter((elem) => elem._id == id);
+      let ids = [id];
+      course[0].learningPath.map((section) => {
+        ids.push(section._id);
+        section.units.map((unit) => {
+          ids.push(unit._id);
+        });
+      });
+      let temp = selectedCheckbox.filter((elem) => !ids.includes(elem));
+      setSelectedCheckbox(temp);
+      setSelectedUnits({ ...selectedUnits, [id]: [] });
+    }
+  };
+  const onSelectSectionCheckbox = (courseId, sectionId, value) => {
+    console.log(2);
+
+    if (value) {
+      const course = ongoingCourses.filter((elem) => elem._id == courseId);
+      const section = course[0].learningPath.filter((elem) => elem._id == sectionId);
+
+      let ids = [sectionId];
+      let unitIds = [];
+
+      section[0].units.map((unit) => {
+        ids.push(unit._id);
+        unitIds.push(unit._id);
+      });
+
+      setSelectedCheckbox([...selectedCheckbox, ...ids]);
+
+      if (selectedUnits.hasOwnProperty(courseId)) {
+        setSelectedUnits({ ...selectedUnits, [courseId]: [...selectedUnits[courseId], ...unitIds] });
+      } else {
+        setSelectedUnits({ ...selectedUnits, [courseId]: unitIds });
       }
     } else {
-      setIsPasswordCorrect(false);
-      setPasswordError("Incorrect Password");
+      const course = ongoingCourses.filter((elem) => elem._id == courseId);
+      const section = course[0].learningPath.filter((elem) => elem._id == sectionId);
+
+      let ids = [sectionId];
+      let unitIds = [];
+      section[0].units.map((unit) => {
+        ids.push(unit._id);
+        unitIds.push(unit._id);
+      });
+      let temp = selectedCheckbox.filter((elem) => !ids.includes(elem));
+      setSelectedCheckbox(temp);
+
+      if (selectedUnits.hasOwnProperty(courseId)) {
+        let temp = selectedUnits[courseId].filter((elem) => !unitIds.includes(elem));
+        setSelectedUnits({ ...selectedUnits, [courseId]: temp });
+      }
     }
+  };
+  const onSelectUnitCheckbox = (id, courseId, value) => {
+    if (value) {
+      setSelectedCheckbox([...selectedCheckbox, id]);
+      if (selectedUnits.hasOwnProperty(courseId)) {
+        setSelectedUnits({ ...selectedUnits, [courseId]: [...selectedUnits[courseId], id] });
+      } else {
+        setSelectedUnits({ ...selectedUnits, [courseId]: [id] });
+      }
+      console.log(selectedUnits);
+    } else {
+      let temp = selectedCheckbox.filter((elem) => elem != id);
+      setSelectedCheckbox(temp);
+      if (selectedUnits.hasOwnProperty(courseId)) {
+        let temp = selectedUnits[courseId].filter((elem) => elem != id);
+        setSelectedUnits({ ...selectedUnits, [courseId]: temp });
+      }
+      console.log(selectedUnits);
+    }
+  };
+
+  const setupContentHub = () => {
+    setStep(6);
+    onCreateGroup();
+  };
+
+  const onSendFile = () => {
+    //const url = '/storage/sdcard0/Music/Rammstein:Amerika.mp3';
+    const url = "/storage/emulated/0/Music/Bullet For My Valentine:Letting You Go.mp3";
+    PermissionsAndroid.request(PermissionsAndroid.PERMISSIONS.READ_EXTERNAL_STORAGE, {
+      title: "Access to read",
+      message: "READ_EXTERNAL_STORAGE",
+    })
+      .then((granted) => {
+        if (granted === PermissionsAndroid.RESULTS.GRANTED) {
+          console.log("You can use the storage");
+        } else {
+          console.log("Storage permission denied");
+        }
+      })
+      .then(() => {
+        return PermissionsAndroid.request(PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE, {
+          title: "Access to write",
+          message: "WRITE_EXTERNAL_STORAGE",
+        });
+      })
+      .then(() => {
+        return sendFile(url)
+          .then((metaInfo) => console.log("File sent successfully", metaInfo))
+          .catch((err) => console.log("Error while file sending", err));
+      })
+      .catch((err) => console.log(err));
+  };
+
+  const onReceiveFile = () => {
+    PermissionsAndroid.request(PermissionsAndroid.PERMISSIONS.READ_EXTERNAL_STORAGE, {
+      title: "Access to read",
+      message: "READ_EXTERNAL_STORAGE",
+    })
+      .then((granted) => {
+        if (granted === PermissionsAndroid.RESULTS.GRANTED) {
+          console.log("You can use the storage");
+        } else {
+          console.log("Storage permission denied");
+        }
+      })
+      .then(() => {
+        return PermissionsAndroid.request(PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE, {
+          title: "Access to write",
+          message: "WRITE_EXTERNAL_STORAGE",
+        });
+      })
+      .then(() => {
+        return receiveFile("/storage/emulated/0/Music/", "BFMV:Letting You Go.mp3")
+          .then(() => console.log("File received successfully"))
+          .catch((err) => console.log("Error while file receiving", err));
+      })
+      .catch((err) => console.log(err));
   };
 
   return (
@@ -84,10 +344,10 @@ export default function ShareScreen({ navigation }) {
           <Headline style={styles.shareHeading}>Adaptivo Sharing</Headline>
           <Caption>Share courses among your peers with ease</Caption>
           <Image source={sharingImage} style={styles.sharingImage} />
-          <Button mode="contained" dark={true} uppercase={false} color={colors.orange} style={styles.shareButton} onPress={() => setStep(6)}>
+          <Button mode="contained" dark={true} uppercase={false} color={colors.orange} style={styles.shareButton} onPress={() => setupContentHub}>
             Set Up as a Content Hub
           </Button>
-          <Button mode="contained" dark={true} uppercase={false} color={colors.orange} style={styles.shareButton} onPress={() => setStep(2)}>
+          <Button mode="contained" dark={true} uppercase={false} color={colors.orange} style={styles.shareButton} onPress={() => onConnectToContentHubClick()}>
             Connect to a Content Hub
           </Button>
         </View>
@@ -102,20 +362,21 @@ export default function ShareScreen({ navigation }) {
       ) : step == 3 ? (
         <View style={styles.devicesContainer}>
           <Headline style={styles.searchingHeading}>Select a Device</Headline>
-          <View>
+          <ScrollView>
             {deviceList.map((device, i) => {
               return (
                 <Text
-                  key={device.BSSID}
+                  key={device.deviceAddress}
                   style={styles.wifiDevices}
                   onPress={() => {
+                    connectToDevice(device.deviceAddress);
                     setStep(4);
                     setIsConnectClicked(false);
                     setPassword("");
                     setPasswordError("");
                   }}
                 >
-                  {device.SSID}
+                  {device.deviceName}
                 </Text>
               );
             })}
@@ -130,7 +391,7 @@ export default function ShareScreen({ navigation }) {
             >
               {constants.device}
             </Text>
-          </View>
+          </ScrollView>
 
           <Button mode="contained" dark={true} uppercase={false} color={colors.orange} style={styles.shareButton} onPress={() => setStep(1)}>
             Back to Adaptivo Sharing
@@ -138,7 +399,16 @@ export default function ShareScreen({ navigation }) {
         </View>
       ) : step == 4 ? (
         <View style={styles.devicesContainer}>
-          <Headline style={styles.searchingHeading}>Enter Password</Headline>
+          <Headline style={styles.searchingHeading}>Select Transfer Type</Headline>
+          <View>
+            <Button mode="contained" dark={true} uppercase={false} color={colors.orange} style={styles.shareButton} onPress={() => onConnectToContentHubClick()}>
+              Automatic Transfer
+            </Button>
+            <Button mode="contained" dark={true} uppercase={false} color={colors.orange} style={styles.shareButton} onPress={() => setStep(5)}>
+              Manual Transfer
+            </Button>
+          </View>
+          {/* <Headline style={styles.searchingHeading}>Enter Password</Headline>
           <View>
             <TextInput
               label="Password"
@@ -176,13 +446,75 @@ export default function ShareScreen({ navigation }) {
                 onAnimationComplete={() => setStep(5)}
               />
             )}
-          </View>
-
+          </View> */}
           <Button mode="contained" dark={true} uppercase={false} color={"#999"} style={styles.shareButton} onPress={() => setStep(3)}>
             Connect Another Device
           </Button>
         </View>
       ) : step == 5 ? (
+        <View style={styles.devicesContainer}>
+          <Headline style={styles.searchingHeading}>Select Files</Headline>
+          <ScrollView style={styles.accordion}>
+            {/* {ongoingCourses.map((course) => {
+              return (
+                <Collapse style={styles.accordion} key={course._id}>
+                  <CollapseHeader>
+                    <View style={styles.accordionHeader}>
+                      <View style={styles.checkboxContainer}>
+                        <CheckBox value={selectedCheckbox.includes(course._id)} onValueChange={(newValue) => onSelectCourseCheckbox(course._id, newValue)} />
+                        <Text>{course.courseId.title}</Text>
+                      </View>
+                    </View>
+                  </CollapseHeader>
+                  <CollapseBody>
+                    {course.learningPath.map((section) => {
+                      return (
+                        <Collapse key={section._id}>
+                          <CollapseHeader>
+                            <View style={styles.sectionHeader}>
+                              <View style={styles.checkboxContainer}>
+                                <CheckBox value={selectedCheckbox.includes(section._id)} onValueChange={(newValue) => onSelectSectionCheckbox(course._id, section._id, newValue)} />
+                                <Text>{section.name}</Text>
+                              </View>
+                            </View>
+                          </CollapseHeader>
+                          <CollapseBody>
+                            {section.units.map((unit) => {
+                              return (
+                                <ListItem key={unit._id} style={styles.unitList}>
+                                  <View style={styles.checkboxContainer}>
+                                    <CheckBox value={selectedCheckbox.includes(unit._id)} onValueChange={(newValue) => onSelectUnitCheckbox(unit._id, course._id, newValue)} />
+                                    <Text>{unit.name}</Text>
+                                  </View>
+                                </ListItem>
+                              );
+                            })}
+                          </CollapseBody>
+                        </Collapse>
+                      );
+                    })}
+                  </CollapseBody>
+                </Collapse>
+              );
+            })} */}
+            <Button mode="contained" dark={true} uppercase={false} color={colors.orange} style={styles.shareButton} onPress={() => onSendMessage()}>
+              Start Transfer
+            </Button>
+          </ScrollView>
+        </View>
+      ) : step == 6 ? (
+        <View style={styles.devicesContainer}>
+          <Headline style={styles.searchingHeading}>Connected to the Device</Headline>
+
+          <Button mode="contained" dark={true} uppercase={false} color={colors.orange} style={styles.shareButton} onPress={() => onReceiveMessage()}>
+            Receive Message
+          </Button>
+
+          <Button mode="contained" dark={true} uppercase={false} color={colors.orange} style={styles.shareButton} onPress={() => onReceiveMessage()}>
+            Send Files
+          </Button>
+        </View>
+      ) : step == 10 ? (
         <View style={styles.devicesContainer}>
           <Headline style={styles.searchingHeading}>Connected to the Device</Headline>
 

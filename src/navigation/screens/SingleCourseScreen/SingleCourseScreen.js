@@ -18,8 +18,13 @@ import { courseActions } from "../../../store/course-slice";
 import { getUserCourseById } from "../../../services/usercourse.service";
 import { checkFreeStorage, setDownloadQuality } from "../../../utils/smartDownloadAgent";
 import { colors } from "../../../utils/colors";
+import { TabRouter } from "react-navigation";
+import NoteDisplay from "../../../components/NoteDisplay/NoteDisplay";
+import PdfViewer from "../../../components/PdfViewer/PdfViewer";
+import { useNetInfo } from "@react-native-community/netinfo";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
-export default function SingleCourseScreen({ navigation }) {
+export default function SingleCourseScreen({ route, navigation }) {
   const style = singleCourseScreenStyles;
   const [data, setData] = useState();
   const [isLoading, setIsLoading] = useState(false);
@@ -28,6 +33,8 @@ export default function SingleCourseScreen({ navigation }) {
   const body = useSelector((state) => state.course.contentBody);
   const selectedUnitName = useSelector((state) => state.course.selectedUnitName);
   const courseName = useSelector((state) => state.course.courseName);
+  const [isConnected, setIsConnected] = useState(false);
+  const netInfo = useNetInfo();
 
   const [isAllDownloaded, setIsAllDownloaded] = useState(false);
   const filesToDownload = [
@@ -42,19 +49,43 @@ export default function SingleCourseScreen({ navigation }) {
 
   const getData = async () => {
     //Fetches the data from the db
-    const response = await getUserCourseById("632321a83d306c8028f4e711");
-    setIsLoading(true);
-    setData(response);
-    dispatch(courseActions.setCourseName(response.title));
-    dispatch(courseActions.setCurriculum([...response.learningPath]));
-
-    dispatch(courseActions.setSelectedUnit({ section: 0, unit: 0 }));
-    dispatch(courseActions.setNextUnit());
-    setIsLoading(false);
+    // "632321a83d306c8028f4e711"
+    // const response = await getUserCourseById(route.params.id);
+    if (netInfo.isConnected) {
+      setIsLoading(true);
+      const response = await getUserCourseById("632321a83d306c8028f4e711");
+      setData(response);
+      dispatch(courseActions.setCourseName(response.title));
+      dispatch(courseActions.setCurriculum([...response.learningPath]));
+      dispatch(courseActions.setSelectedUnit({ section: 0, unit: 0 }));
+      dispatch(courseActions.setNextUnit());
+      setIsLoading(false);
+    } else {
+      try {
+        setIsLoading(true);
+        const jsonValue = await AsyncStorage.getItem("courses");
+        const course = JSON.parse(jsonValue);
+        const filteredCourse = course.filter((elem) => elem._id == route.params.id);
+        const response = filteredCourse[0];
+        setData(response);
+        dispatch(courseActions.setCourseName(response.title));
+        dispatch(courseActions.setCurriculum([...response.learningPath]));
+        dispatch(courseActions.setSelectedUnit({ section: 0, unit: 0 }));
+        dispatch(courseActions.setNextUnit());
+        setIsLoading(false);
+      } catch (e) {
+        console.log(e);
+      }
+    }
   };
   useEffect(() => {
+    setData();
     getData();
-  }, []);
+  }, [route.params.id]);
+
+  useEffect(() => {
+    setIsConnected(netInfo.setIsConnected);
+  }, [netInfo.isConnected]);
 
   const checkPermission = async () => {
     console.log("Check Permission");
@@ -81,6 +112,7 @@ export default function SingleCourseScreen({ navigation }) {
     }
   };
   // https://www.learningcontainer.com/wp-content/uploads/2020/05/sample-mp4-file.mp4
+
   const downloadFile = async () => {
     const path = ReactNativeBlobUtil.fs.dirs.SDCardDir;
 
@@ -125,7 +157,9 @@ export default function SingleCourseScreen({ navigation }) {
     <SafeAreaView style={style.container}>
       <ScrollView style={{ flex: 1, flexDirection: "column" }} nestedScrollEnabled={true}>
         <View style={{ height: 700 }}>
-          {(type == "video" || type == "realExampleVideo" || type == "additionalVideo") && <VideoPlayer src={body} isAllDownloaded={isAllDownloaded} />}
+          {data && (type == "video" || type == "realExampleVideo" || type == "additionalVideo") && <VideoPlayer src={body} isAllDownloaded={isAllDownloaded} />}
+          {data && type == "note" && <NoteDisplay note={body} />}
+          {data && (type == "visualNote" || type == "realExampleDoc" || type == "additionalMaterials" || type == "textRichFile") && <PdfViewer url={body} />}
 
           {data && (
             <View style={{ flex: 1, flexDirection: "column", justifyContent: "flex-start" }}>
